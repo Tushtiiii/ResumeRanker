@@ -560,3 +560,17 @@ exports.parseJD = async (req, res) => {
     res.status(500).json({ error: err.message || 'Failed to parse JD.' });
   }
 };
+
+exports.analyzeCandidates = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Please upload a file.' });
+    }
+
+    // Your processing logic here...
+
+    res.status(200).json({ message: 'File processed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error during analysis.' });
+  }
+};

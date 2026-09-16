@@ -1,5 +1,15 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const multer = require('multer');
+
+// Example: Increase limit to 10 MB (10 * 1024 * 1024 bytes)
+const upload = multer({
+  storage: multer.memoryStorage(), // or diskStorage
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10 MB limit
+  },
+});
+
 
 // ─── Verify JWT ───────────────────────────────────────────────────────────────
 const protect = async (req, res, next) => {
@@ -71,4 +81,4 @@ const optionalProtect = async (req, res, next) => {
   next();
 };
 
-module.exports = { protect, authorize, generateToken, optionalProtect };
+module.exports = {upload, protect, authorize, generateToken, optionalProtect };

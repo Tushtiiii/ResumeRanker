@@ -12,10 +12,10 @@ const jobRoutes = require('./routes/jobRoutes');
 const candidateRoutes = require('./routes/candidateRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const rankerRoutes = require('./routes/rankerRoutes');
+const rankerRoutes = require('./routes/rankerRoutes'); 
 
 const app = express();
-
+ 
 // ─── Connect Database ─────────────────────────────────────────────────────────
 connectDB();
 

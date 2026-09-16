@@ -1,22 +1,20 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import AppLayout from '../../components/layout/AppLayout';
 
-const ScoreBar = ({ value }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-    <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.08)' }}>
-      <div style={{
-        height: '100%', width: `${value || 0}%`, borderRadius: 4,
-        background: (value || 0) >= 80 ? 'var(--gradient-success)'
-          : (value || 0) >= 60 ? 'linear-gradient(90deg,#f59e0b,#f97316)'
-          : 'linear-gradient(90deg,#ef4444,#ec4899)',
-      }} />
+const ScoreBar = ({ value }) => {
+  const color = (value || 0) >= 80 ? 'var(--color-success)' : (value || 0) >= 60 ? 'var(--color-warning)' : 'var(--color-danger)';
+  const barBg = (value || 0) >= 80 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
+    : (value || 0) >= 60 ? 'bg-gradient-to-r from-amber-400 to-orange-400'
+    : 'bg-gradient-to-r from-red-400 to-pink-400';
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-2 rounded bg-[var(--color-border-light)]">
+        <div className={`h-full rounded ${barBg}`} style={{ width: `${value || 0}%` }} />
+      </div>
+      <span className="text-[13px] font-bold min-w-9 text-right" style={{ color }}>{value ?? '—'}</span>
     </div>
-    <span style={{ fontSize: 13, fontWeight: 700, minWidth: 36, textAlign: 'right',
-      color: (value || 0) >= 80 ? 'var(--accent-success)' : (value || 0) >= 60 ? 'var(--accent-warning)' : 'var(--accent-danger)' }}>
-      {value ?? '—'}
-    </span>
-  </div>
-);
+  );
+};
 
 const metrics = [
   { key: 'finalScore', label: '🏆 Final Score', isMain: true },
@@ -29,6 +27,18 @@ const metrics = [
   { key: 'platformActivity', label: 'Platform Activity (5%)' },
 ];
 
+const RecBadge = ({ value }) => {
+  const map = {
+    strong_yes: { label: '⭐ Strong Yes', color: 'var(--color-success)' },
+    yes: { label: '✅ Yes', color: '#4ade80' },
+    maybe: { label: '🤔 Maybe', color: 'var(--color-warning)' },
+    no: { label: '❌ No', color: 'var(--color-danger)' },
+    strong_no: { label: '🚫 Strong No', color: '#b91c1c' },
+  };
+  const r = map[value] || { label: '— Not analyzed', color: 'var(--color-text-muted)' };
+  return <span className="font-semibold text-[13px]" style={{ color: r.color }}>{r.label}</span>;
+};
+
 export default function CandidateComparison() {
   const { state } = useLocation();
   const navigate = useNavigate();
@@ -37,15 +47,11 @@ export default function CandidateComparison() {
   if (!applications.length) {
     return (
       <AppLayout>
-        <div style={{ maxWidth: 600, margin: '80px auto', textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>⚖️</div>
-          <h2 style={{ fontFamily: 'var(--font-heading)', marginBottom: 12 }}>No candidates selected</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>
-            Go to a Job Detail page and select 2–3 candidates to compare.
-          </p>
-          <button onClick={() => navigate('/recruiter')} style={btnPrimary}>
-            Back to Dashboard
-          </button>
+        <div className="max-w-[600px] mx-auto my-20 text-center">
+          <div className="text-5xl mb-4">⚖️</div>
+          <h2 className="font-heading font-bold mb-3 text-[var(--color-text-primary)]">No candidates selected</h2>
+          <p className="text-[var(--color-text-secondary)] mb-6">Go to a Job Detail page and select 2–3 candidates to compare.</p>
+          <button onClick={() => navigate('/recruiter')} className="btn-primary py-3 px-6">Back to Dashboard</button>
         </div>
       </AppLayout>
     );
@@ -53,35 +59,32 @@ export default function CandidateComparison() {
 
   return (
     <AppLayout>
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{ marginBottom: 28, display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button onClick={() => navigate(-1)} style={btnBack}>← Back</button>
+      <div className="max-w-[1100px] mx-auto">
+        <div className="mb-7 flex items-center gap-4">
+          <button onClick={() => navigate(-1)} className="btn-secondary py-2 px-4 text-[13px]">← Back</button>
           <div>
-            <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', marginBottom: 4 }}>Candidate Comparison</h1>
-            {job && <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>for {job.title}</p>}
+            <h1 className="font-heading text-[1.8rem] font-bold mb-1 text-[var(--color-text-primary)]">Candidate Comparison</h1>
+            {job && <p className="text-[var(--color-text-secondary)] text-sm">for {job.title}</p>}
           </div>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 0', fontSize: 14 }}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-separate border-spacing-0">
             <thead>
               <tr>
-                <th style={{ ...thStyle, width: 220, textAlign: 'left' }}>Metric</th>
+                <th className="p-0 text-left min-w-[220px] bg-[var(--color-surface-alt)] border-b border-[var(--color-border)]">
+                  <div className="p-4 font-semibold text-[var(--color-text-secondary)]">Metric</div>
+                </th>
                 {applications.map((app) => {
                   const c = app.candidateId;
                   return (
-                    <th key={app._id} style={thStyle}>
-                      <div style={{ padding: '16px 8px' }}>
-                        <div style={{
-                          width: 48, height: 48, borderRadius: '50%',
-                          background: 'var(--gradient-primary)', margin: '0 auto 10px',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 20, fontWeight: 800, color: 'white',
-                        }}>
+                    <th key={app._id} className="p-0 text-center min-w-[200px] bg-[var(--color-surface-alt)] border-b border-[var(--color-border)]">
+                      <div className="py-4 px-2">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] mx-auto mb-2.5 flex items-center justify-center text-xl font-extrabold text-white">
                           {c?.userId?.name?.[0] || '?'}
                         </div>
-                        <div style={{ fontWeight: 700, marginBottom: 4 }}>{c?.userId?.name || 'Candidate'}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c?.headline?.slice(0, 50)}</div>
+                        <div className="font-bold text-[var(--color-text-primary)] mb-1">{c?.userId?.name || 'Candidate'}</div>
+                        <div className="text-[11px] text-[var(--color-text-muted)]">{c?.headline?.slice(0, 50)}</div>
                       </div>
                     </th>
                   );
@@ -91,54 +94,42 @@ export default function CandidateComparison() {
             <tbody>
               {metrics.map((m) => (
                 <tr key={m.key}>
-                  <td style={tdLabelStyle(m.isMain)}>{m.label}</td>
+                  <td className={`p-3.5 pl-4 whitespace-nowrap border-b border-[var(--color-border-light)] ${m.isMain ? 'font-bold text-[15px] text-[var(--color-text-primary)] bg-[var(--color-accent-light)]' : 'font-medium text-[13px] text-[var(--color-text-secondary)]'}`}>{m.label}</td>
                   {applications.map((app) => {
                     const value = m.isMain ? app.finalScore : app.scoreBreakdown?.[m.key];
                     return (
-                      <td key={app._id} style={tdStyle(m.isMain)}>
-                        {value != null ? <ScoreBar value={value} /> : <span style={{ color: 'var(--text-muted)' }}>Not scored</span>}
+                      <td key={app._id} className={`p-3.5 px-5 text-left border-b border-[var(--color-border-light)] ${m.isMain ? 'bg-[var(--color-accent-light)]' : ''}`}>
+                        {value != null ? <ScoreBar value={value} /> : <span className="text-[var(--color-text-muted)]">Not scored</span>}
                       </td>
                     );
                   })}
                 </tr>
               ))}
-
-              {/* Experience Row */}
               <tr>
-                <td style={tdLabelStyle()}>Total Experience</td>
+                <td className="p-3.5 pl-4 font-medium text-[13px] text-[var(--color-text-secondary)] border-b border-[var(--color-border-light)]">Total Experience</td>
                 {applications.map((app) => (
-                  <td key={app._id} style={tdStyle()}>
-                    <span style={{ fontWeight: 600, color: 'var(--accent-secondary)' }}>
-                      {app.candidateId?.totalExperienceYears ?? '?'} yrs
-                    </span>
+                  <td key={app._id} className="p-3.5 px-5 border-b border-[var(--color-border-light)]">
+                    <span className="font-semibold text-[var(--color-secondary)]">{app.candidateId?.totalExperienceYears ?? '?'} yrs</span>
                   </td>
                 ))}
               </tr>
-
-              {/* Skills Row */}
               <tr>
-                <td style={tdLabelStyle()}>Top Skills</td>
+                <td className="p-3.5 pl-4 font-medium text-[13px] text-[var(--color-text-secondary)] border-b border-[var(--color-border-light)]">Top Skills</td>
                 {applications.map((app) => (
-                  <td key={app._id} style={tdStyle()}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  <td key={app._id} className="p-3.5 px-5 border-b border-[var(--color-border-light)]">
+                    <div className="flex flex-wrap gap-1">
                       {(app.candidateId?.skills || []).slice(0, 6).map((s) => (
-                        <span key={s} style={{
-                          padding: '2px 8px', borderRadius: 99, fontSize: 11,
-                          background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)',
-                          color: 'var(--accent-primary)', whiteSpace: 'nowrap',
-                        }}>{s}</span>
+                        <span key={s} className="tag text-[11px]">{s}</span>
                       ))}
                     </div>
                   </td>
                 ))}
               </tr>
-
-              {/* Recommendation Row */}
               <tr>
-                <td style={tdLabelStyle()}>AI Recommendation</td>
+                <td className="p-3.5 pl-4 font-medium text-[13px] text-[var(--color-text-secondary)]">AI Recommendation</td>
                 {applications.map((app) => (
-                  <td key={app._id} style={tdStyle()}>
-                    <RecommendationBadge value={app.aiInsights?.recommendation} />
+                  <td key={app._id} className="p-3.5 px-5">
+                    <RecBadge value={app.aiInsights?.recommendation} />
                   </td>
                 ))}
               </tr>
@@ -149,39 +140,3 @@ export default function CandidateComparison() {
     </AppLayout>
   );
 }
-
-const RecommendationBadge = ({ value }) => {
-  const map = {
-    strong_yes: { label: '⭐ Strong Yes', color: 'var(--accent-success)' },
-    yes: { label: '✅ Yes', color: '#4ade80' },
-    maybe: { label: '🤔 Maybe', color: 'var(--accent-warning)' },
-    no: { label: '❌ No', color: 'var(--accent-danger)' },
-    strong_no: { label: '🚫 Strong No', color: '#b91c1c' },
-  };
-  const r = map[value] || { label: '— Not analyzed', color: 'var(--text-muted)' };
-  return <span style={{ color: r.color, fontWeight: 600, fontSize: 13 }}>{r.label}</span>;
-};
-
-const thStyle = { padding: 0, textAlign: 'center', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', minWidth: 200 };
-const tdLabelStyle = (isMain) => ({
-  padding: '14px 16px', fontWeight: isMain ? 700 : 500,
-  color: isMain ? 'var(--text-primary)' : 'var(--text-secondary)',
-  fontSize: isMain ? 15 : 13,
-  background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)',
-  whiteSpace: 'nowrap',
-});
-const tdStyle = (isMain) => ({
-  padding: '14px 20px', textAlign: 'left',
-  borderBottom: '1px solid rgba(255,255,255,0.05)',
-  background: isMain ? 'rgba(124,58,237,0.05)' : 'transparent',
-});
-const btnPrimary = {
-  padding: '12px 24px', borderRadius: 'var(--radius-md)',
-  background: 'var(--gradient-primary)', color: 'white', border: 'none',
-  fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)',
-};
-const btnBack = {
-  padding: '8px 16px', borderRadius: 'var(--radius-md)',
-  background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)',
-  color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-body)',
-};

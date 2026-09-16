@@ -1,256 +1,225 @@
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import RankerPreviewWidget from '../components/RankerPreviewWidget';
 
 const features = [
-  { icon: '🧠', title: 'AI-Powered Matching', desc: 'Semantic understanding of job requirements and candidate profiles beyond keyword matching.' },
-  { icon: '📊', title: 'Hybrid Scoring Engine', desc: '7-dimension weighted scoring: skills, experience, projects, career growth, certifications, and more.' },
-  { icon: '💡', title: 'Explainable AI', desc: 'Detailed insights on why each candidate received their score. No black box decisions.' },
-  { icon: '⚡', title: 'Real-Time Ranking', desc: 'Instantly rank all applicants the moment you run the AI analysis. Sort, filter, compare.' },
-  { icon: '🎯', title: 'Interview Generator', desc: 'Auto-generate role-specific interview questions at beginner, intermediate, and advanced levels.' },
-  { icon: '🤖', title: 'AI Chat Assistant', desc: 'Ask natural language questions about your candidate pool and get instant intelligent answers.' },
+  { icon: '🤖', title: 'AI-Powered Ranking', desc: 'Semantic analysis scores candidates against job descriptions using advanced embeddings.' },
+  { icon: '📄', title: 'Smart Resume Parsing', desc: 'AI extracts skills, experience, education, and projects from any resume format.' },
+  { icon: '🎯', title: 'Interview Generator', desc: 'Generate tailored technical, behavioral, and situational interview questions.' },
+  { icon: '📊', title: 'Analytics Dashboard', desc: 'Real-time insights into your recruitment pipeline with AI-driven metrics.' },
+  { icon: '⚖️', title: 'Candidate Comparison', desc: 'Side-by-side comparison with score breakdowns across all dimensions.' },
+  { icon: '🔍', title: 'Semantic Search', desc: 'Find the best candidates using natural language queries powered by vector embeddings.' },
 ];
 
-const stats = [
-  { value: '10x', label: 'Faster Screening' },
-  { value: '95%', label: 'Match Accuracy' },
-  { value: '7', label: 'Scoring Dimensions' },
-  { value: '0', label: 'Bias Tolerance' },
+const steps = [
+  { num: '01', title: 'Post a Job', desc: 'Upload or paste your job description — AI automatically extracts requirements.' },
+  { num: '02', title: 'Candidates Apply', desc: 'Candidates upload resumes that are parsed and profiled by AI automatically.' },
+  { num: '03', title: 'AI Ranks & Scores', desc: 'Advanced algorithms score candidates across 7 dimensions with semantic matching.' },
+  { num: '04', title: 'Make Decisions', desc: 'Compare top candidates, generate interview questions, and hire with confidence.' },
 ];
 
 export default function LandingPage() {
-  const navigate = useNavigate();
+  const { token, user } = useSelector((s) => s.auth);
+  const dashPath = user?.role === 'recruiter' ? '/recruiter' : user?.role === 'admin' ? '/admin' : '/candidate';
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', fontFamily: 'var(--font-body)' }}>
-      {/* Floating AI Ranker preview widget */}
-      <RankerPreviewWidget />
-      {/* ─── Navbar ─── */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '16px 48px',
-        background: 'rgba(10, 11, 20, 0.8)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid var(--border-color)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: 'var(--gradient-primary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-          }}>🎯</div>
-          <span style={{ fontFamily: 'var(--font-heading)', fontSize: 20, fontWeight: 700 }}>TalentAI</span>
-        </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <Link to="/login" style={{
-            padding: '8px 20px', borderRadius: 'var(--radius-full)',
-            border: '1px solid var(--border-color)', color: 'var(--text-primary)',
-            textDecoration: 'none', fontSize: 14, fontWeight: 500,
-            transition: 'all 0.2s ease',
-          }}>Log In</Link>
-          <Link to="/register" style={{
-            padding: '8px 20px', borderRadius: 'var(--radius-full)',
-            background: 'var(--gradient-primary)', color: 'white',
-            textDecoration: 'none', fontSize: 14, fontWeight: 600,
-          }}>Get Started Free</Link>
+    <div className="min-h-screen bg-[var(--color-base)]">
+      {/* ── Navbar ── */}
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[var(--color-border-light)]">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3.5">
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-[10px] bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] flex items-center justify-center text-base shadow-md">
+              🎯
+            </div>
+            <span className="font-heading font-bold text-xl text-[var(--color-text-primary)]">
+              TalentAI
+            </span>
+          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/resume-ranker"
+              className="hidden sm:inline-flex px-4 py-2 rounded-full text-sm font-medium text-[var(--color-accent)] hover:bg-[var(--color-accent-light)] transition-colors"
+            >
+              Try AI Ranker
+            </Link>
+            {token ? (
+              <Link
+                to={dashPath}
+                className="btn-primary text-sm px-5 py-2.5 rounded-full"
+              >
+                Dashboard →
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="px-4 py-2 rounded-full text-sm font-medium text-[var(--color-text-secondary)] border border-[var(--color-border)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all"
+                >
+                  Log In
+                </Link>
+                <Link
+                  to="/register"
+                  className="btn-primary text-sm px-5 py-2.5 rounded-full"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </nav>
 
-      {/* ─── Hero ─── */}
-      <section style={{
-        minHeight: '100vh', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-        padding: '120px 24px 80px',
-        position: 'relative', overflow: 'hidden',
-      }}>
-        {/* Background orbs */}
-        <div style={{
-          position: 'absolute', width: 600, height: 600, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%)',
-          top: '10%', left: '10%', pointerEvents: 'none',
-        }} />
-        <div style={{
-          position: 'absolute', width: 400, height: 400, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(6,182,212,0.1) 0%, transparent 70%)',
-          bottom: '20%', right: '15%', pointerEvents: 'none',
-        }} />
+      {/* ── Hero ── */}
+      <section className="relative overflow-hidden py-24 md:py-32 px-6">
+        {/* Decorative blobs */}
+        <div className="absolute top-[-100px] right-[-100px] w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(124,58,237,0.08)_0%,transparent_70%)] pointer-events-none" />
+        <div className="absolute bottom-[-80px] left-[-80px] w-[400px] h-[400px] rounded-full bg-[radial-gradient(circle,rgba(6,182,212,0.06)_0%,transparent_70%)] pointer-events-none" />
 
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          padding: '6px 16px', borderRadius: 'var(--radius-full)',
-          background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)',
-          fontSize: 13, color: 'var(--accent-primary)', marginBottom: 24, fontWeight: 500,
-        }}>
-          ✨ AI-Powered Recruitment Intelligence
-        </div>
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--color-accent-light)] border border-[rgba(124,58,237,0.15)] text-sm text-[var(--color-accent)] font-medium mb-8">
+            ✨ AI-Powered Recruitment Platform
+          </div>
+          <h1 className="font-heading text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight mb-6 text-[var(--color-text-primary)]">
+            Hire the <span className="gradient-text">Best Talent</span>
+            <br />with AI Intelligence
+          </h1>
+          <p className="text-lg md:text-xl text-[var(--color-text-secondary)] max-w-2xl mx-auto mb-10 leading-relaxed">
+            TalentAI uses semantic embeddings, intelligent scoring, and deep analysis
+            to match the right candidates to the right roles — 10× faster.
+          </p>
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            <Link
+              to="/register?role=recruiter"
+              className="btn-primary text-base px-8 py-3.5 rounded-full shadow-lg"
+            >
+              🚀 Start Hiring Free
+            </Link>
+            <Link
+              to="/resume-ranker"
+              className="btn-secondary  px-8 py-3.5 rounded-full"
+            >
+              🏆 Try AI Ranker
+            </Link>
+          </div>
 
-        <h1 style={{
-          fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontFamily: 'var(--font-heading)',
-          fontWeight: 900, lineHeight: 1.1, marginBottom: 24, maxWidth: 900,
-        }}>
-          Hire the <span style={{
-            background: 'var(--gradient-primary)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>Right People</span>
-          <br />Not Just Keyword Matches
-        </h1>
-
-        <p style={{
-          fontSize: 'clamp(1rem, 2vw, 1.25rem)',
-          color: 'var(--text-secondary)', maxWidth: 620, marginBottom: 48, lineHeight: 1.7,
-        }}>
-          TalentAI understands your job requirements and candidate profiles semantically — 
-          ranking applicants by real suitability using AI, not ATS keyword tricks.
-        </p>
-
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <button onClick={() => navigate('/register')} style={{
-            padding: '14px 36px', borderRadius: 'var(--radius-full)',
-            background: 'var(--gradient-primary)', color: 'white',
-            border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer',
-            boxShadow: 'var(--shadow-glow)', transition: 'transform 0.2s ease',
-            fontFamily: 'var(--font-body)',
-          }}>
-            Start Hiring Smarter →
-          </button>
-          <button onClick={() => navigate('/resume-ranker')} style={{
-            padding: '14px 36px', borderRadius: 'var(--radius-full)',
-            background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(124,58,237,0.15))',
-            color: 'var(--text-primary)',
-            border: '1px solid rgba(124,58,237,0.4)', fontSize: 16, fontWeight: 700,
-            cursor: 'pointer', fontFamily: 'var(--font-body)',
-            transition: 'all 0.2s ease',
-          }}>
-            🤖 Try AI Ranker Free
-          </button>
-          <button onClick={() => navigate('/register?role=candidate')} style={{
-            padding: '14px 36px', borderRadius: 'var(--radius-full)',
-            background: 'transparent', color: 'var(--text-primary)',
-            border: '1px solid var(--border-color)', fontSize: 16, fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'var(--font-body)',
-          }}>
-            I'm a Candidate
-          </button>
-        </div>
-
-        {/* Stats */}
-        <div style={{
-          display: 'flex', gap: 48, marginTop: 80, flexWrap: 'wrap', justifyContent: 'center',
-        }}>
-          {stats.map((s) => (
-            <div key={s.label} style={{ textAlign: 'center' }}>
-              <div style={{
-                fontSize: 'clamp(2rem, 4vw, 3rem)', fontFamily: 'var(--font-heading)',
-                fontWeight: 900,
-                background: 'var(--gradient-primary)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              }}>{s.value}</div>
-              <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 4 }}>{s.label}</div>
-            </div>
-          ))}
+          {/* Stats */}
+          <div className="mt-16 grid grid-cols-3 gap-6 max-w-lg mx-auto">
+            {[
+              { value: '7+', label: 'AI Dimensions' },
+              { value: '10×', label: 'Faster Hiring' },
+              { value: '95%', label: 'Match Accuracy' },
+            ].map(({ value, label }) => (
+              <div key={label} className="text-center">
+                <div className="text-3xl font-extrabold font-heading gradient-text">{value}</div>
+                <div className="text-xs text-[var(--color-text-muted)] mt-1">{label}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* ─── Features ─── */}
-      <section style={{ padding: '80px 48px', maxWidth: 1200, margin: '0 auto' }}>
-        <h2 style={{ textAlign: 'center', fontSize: '2.5rem', marginBottom: 16, fontFamily: 'var(--font-heading)' }}>
-          Everything Recruiters Need
-        </h2>
-        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: 64, fontSize: '1.1rem' }}>
-          Powered by Google Gemini AI and semantic vector search
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
-          {features.map((f, i) => (
-            <div key={i} className="glass-card" style={{ padding: 28 }}>
-              <div style={{ fontSize: 36, marginBottom: 16 }}>{f.icon}</div>
-              <h3 style={{ fontSize: '1.15rem', marginBottom: 10, fontFamily: 'var(--font-heading)' }}>{f.title}</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.7 }}>{f.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── Live Demo CTA ─── */}
-      <section style={{ padding: '60px 48px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexWrap: 'wrap', gap: 32,
-          padding: '48px 56px',
-          background: 'linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(6,182,212,0.08) 100%)',
-          border: '1px solid rgba(124,58,237,0.25)',
-          borderRadius: 'var(--radius-xl)',
-          backdropFilter: 'blur(20px)',
-        }}>
-          <div style={{ maxWidth: 520 }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '4px 14px', borderRadius: 'var(--radius-full)',
-              background: 'rgba(6,182,212,0.12)', border: '1px solid rgba(6,182,212,0.3)',
-              fontSize: 12, color: '#06b6d4', marginBottom: 16, fontWeight: 600,
-            }}>
-              ⚡ No Account Required
-            </div>
-            <h2 style={{ fontSize: '1.9rem', fontFamily: 'var(--font-heading)', marginBottom: 12 }}>
-              Try the AI Ranker <span style={{
-                background: 'var(--gradient-primary)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              }}>Right Now</span>
+      {/* ── Features ── */}
+      <section className="py-20 px-6" id="features">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="font-heading text-3xl md:text-4xl font-bold text-[var(--color-text-primary)] mb-4">
+              Everything You Need to Hire Smarter
             </h2>
-            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, fontSize: '1rem' }}>
-              Upload a job description + paste your candidates list. Get AI-powered rankings in seconds — completely free, no sign-up needed.
-              <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}> Login only to save results.</span>
+            <p className="text-[var(--color-text-secondary)] text-lg max-w-xl mx-auto">
+              A complete AI toolkit built for modern recruitment teams.
             </p>
           </div>
-          <button
-            onClick={() => navigate('/resume-ranker')}
-            style={{
-              padding: '16px 44px', borderRadius: 'var(--radius-full)',
-              background: 'var(--gradient-primary)', color: 'white',
-              border: 'none', fontSize: 17, fontWeight: 700, cursor: 'pointer',
-              boxShadow: 'var(--shadow-glow)', fontFamily: 'var(--font-body)',
-              whiteSpace: 'nowrap', transition: 'transform 0.2s ease',
-              flexShrink: 0,
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.04)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            🤖 Open AI Resume Ranker
-          </button>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {features.map(({ icon, title, desc }) => (
+              <div
+                key={title}
+                className="card p-6 hover:border-[var(--color-accent)] group transition-all"
+              >
+                <div className="w-12 h-12 rounded-xl bg-[var(--color-accent-light)] flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+                  {icon}
+                </div>
+                <h3 className="font-heading font-bold  text-[var(--color-text-primary)] mb-2">
+                  {title}
+                </h3>
+                <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+                  {desc}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* ─── CTA ─── */}
-      <section style={{ padding: '80px 48px', textAlign: 'center' }}>
-        <div style={{
-          maxWidth: 700, margin: '0 auto', padding: '60px 48px',
-          background: 'var(--gradient-card)', border: '1px solid var(--border-accent)',
-          borderRadius: 'var(--radius-xl)', backdropFilter: 'blur(20px)',
-        }}>
-          <h2 style={{ fontSize: '2.5rem', marginBottom: 16, fontFamily: 'var(--font-heading)' }}>
-            Ready to transform hiring?
+      {/* ── How It Works ── */}
+      <section className="py-20 px-6 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="font-heading text-3xl md:text-4xl font-bold text-[var(--color-text-primary)] mb-4">
+              How It Works
+            </h2>
+            <p className="text-[var(--color-text-secondary)] text-lg">
+              From job posting to hiring — in four simple steps.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {steps.map(({ num, title, desc }) => (
+              <div key={num} className="text-center group">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] text-white font-heading font-extrabold text-lg flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                  {num}
+                </div>
+                <h3 className="font-heading font-bold text-[var(--color-text-primary)] mb-2">
+                  {title}
+                </h3>
+                <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+                  {desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="py-20 px-6">
+        <div className="max-w-3xl mx-auto text-center card p-12 md:p-16 bg-gradient-to-br from-[var(--color-accent-light)] to-white border-[rgba(124,58,237,0.15)]">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-[var(--color-text-primary)] mb-4">
+            Ready to Transform Your Hiring?
           </h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: 32, fontSize: '1.05rem' }}>
-            Create your free account and post your first job in under 2 minutes.
+          <p className="text-[var(--color-text-secondary)] text-lg mb-8 max-w-lg mx-auto">
+            Join recruiters who are already using AI to find the best talent, faster.
           </p>
-          <button onClick={() => navigate('/register')} style={{
-            padding: '14px 40px', borderRadius: 'var(--radius-full)',
-            background: 'var(--gradient-primary)', color: 'white',
-            border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer',
-            boxShadow: 'var(--shadow-glow)', fontFamily: 'var(--font-body)',
-          }}>
-            Get Started — It's Free
-          </button>
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            <Link
+              to="/register?role=recruiter"
+              className="btn-primary text-base px-8 py-3.5 rounded-full"
+            >
+              Get Started Free →
+            </Link>
+            <Link
+              to="/register?role=candidate"
+              className="btn-secondary px-8 py-3.5 rounded-full"
+            >
+              I'm a Candidate
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer style={{
-        textAlign: 'center', padding: '24px',
-        borderTop: '1px solid var(--border-color)',
-        color: 'var(--text-muted)', fontSize: 13,
-      }}>
-        © 2025 TalentAI — AI-Powered Candidate Intelligence Platform
+      {/* ── Footer ── */}
+      <footer className="py-10 px-6 border-t border-[var(--color-border-light)]">
+        <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] flex items-center justify-center text-xs">
+              🎯
+            </div>
+            <span className="font-heading font-bold text-sm text-[var(--color-text-primary)]">TalentAI</span>
+          </div>
+          <p className="text-xs text-[var(--color-text-muted)]">
+            © 2026 TalentAI. Built with AI for smarter hiring.
+          </p>
+        </div>
       </footer>
+      <RankerPreviewWidget />
     </div>
   );
 }

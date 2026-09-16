@@ -5,10 +5,7 @@ const path = require('path');
 const { protect, authorize, optionalProtect } = require('../middleware/auth');
 const { analyzeResumes, parseJD, exportRankedResults } = require('../controllers/rankerController');
 
-// ─── Multer: accept both JD file and candidate list file ─────────────────────
-const storage = multer.memoryStorage();
-
-// JD files: PDF / DOCX / TXT
+// JD & Candidates File Filter (PDF / DOCX / TXT for JD; JSON / JSONL for Candidates)
 const jdFilter = (req, file, cb) => {
   if (file.fieldname === 'jdFile') {
     const ext = path.extname(file.originalname).toLowerCase();
@@ -23,16 +20,19 @@ const jdFilter = (req, file, cb) => {
   cb(null, true);
 };
 
+// Create a Multer instance with memory storage, file limits, and custom file filter
 const upload = multer({
-  storage,
-  limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB max per file
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10 MB
+  },
   fileFilter: jdFilter,
 });
-
+ 
 // Accept two named fields: jdFile (1 file) and candidatesFile (1 file)
 const multiUpload = upload.fields([
   { name: 'jdFile', maxCount: 1 },
-  { name: 'candidatesFile', maxCount: 1 },
+  { name: 'candidatesFile', maxCount: 1 }, 
 ]);
 
 // Single-file upload for parse-jd preview (only needs the JD)

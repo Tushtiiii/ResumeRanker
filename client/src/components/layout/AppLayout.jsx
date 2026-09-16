@@ -1,105 +1,118 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../store/slices/authSlice';
 
-const recruiterLinks = [
-  { to: '/recruiter', label: '🏠 Dashboard' },
-  { to: '/recruiter/jobs/new', label: '➕ Post Job' },
-  { to: '/recruiter/resume-ranker', label: '🤖 AI Resume Ranker' },
-  { to: '/recruiter/interview-questions', label: '🎯 Interview Qs' },
-  { to: '/recruiter/analytics', label: '📈 Analytics' },
-];
-
-const candidateLinks = [
-  { to: '/candidate', label: '👤 My Profile' },
-];
-
-const adminLinks = [
-  { to: '/admin', label: '🛡 Admin' },
-  { to: '/recruiter/analytics', label: '📈 Analytics' },
-];
+const navItems = {
+  recruiter: [
+    { path: '/recruiter', icon: '📊', label: 'Dashboard' },
+    { path: '/recruiter/jobs/new', icon: '➕', label: 'Post Job' },
+    { path: '/recruiter/resume-ranker', icon: '🏆', label: 'AI Ranker' },
+    { path: '/recruiter/interview-questions', icon: '🎯', label: 'Interview Qs' },
+    { path: '/recruiter/analytics', icon: '📈', label: 'Analytics' },
+  ],
+  candidate: [
+    { path: '/candidate', icon: '👤', label: 'My Profile' },
+    { path: '/candidate/applications', icon: '📋', label: 'Applications' },
+  ],
+  admin: [
+    { path: '/admin', icon: '⚙️', label: 'Admin Panel' },
+  ],
+};
 
 export default function AppLayout({ children }) {
+  const { user } = useSelector((s) => s.auth);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const dispatch = useDispatch();
-  const { user } = useSelector((s) => s.auth);
+  const [collapsed, setCollapsed] = useState(false);
 
-  const links = user?.role === 'recruiter' ? recruiterLinks
-    : user?.role === 'admin' ? adminLinks
-    : candidateLinks;
-
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate('/login');
-  };
+  const role = user?.role || 'candidate';
+  const items = navItems[role] || navItems.candidate;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex' }}>
+    <div className="flex min-h-screen bg-[var(--color-base)]">
       {/* Sidebar */}
-      <aside style={{
-        width: 220, flexShrink: 0, background: 'var(--bg-card)', backdropFilter: 'blur(20px)',
-        borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column',
-        padding: '24px 16px', position: 'sticky', top: 0, height: '100vh', overflow: 'auto',
-      }}>
-        {/* Brand */}
-        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 36 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10, background: 'var(--gradient-primary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0,
-          }}>🎯</div>
-          <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-            TalentAI
-          </span>
-        </Link>
+      <aside
+        className={`fixed top-0 left-0 h-screen bg-white border-r border-[var(--color-border)] flex flex-col z-50 transition-all duration-300 ${
+          collapsed ? 'w-[68px]' : 'w-[240px]'
+        }`}
+      >
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 px-5 py-5 border-b border-[var(--color-border-light)]">
+          <div className="w-9 h-9 rounded-[10px] bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] flex items-center justify-center text-base shrink-0 shadow-md">
+            🎯
+          </div>
+          {!collapsed && (
+            <span className="font-heading font-bold text-lg text-[var(--color-text-primary)]">
+              TalentAI
+            </span>
+          )}
+        </div>
 
-        {/* Nav Links */}
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-          {links.map(({ to, label }) => {
-            const isActive = to === '/recruiter'
-              ? location.pathname === '/recruiter'
-              : location.pathname.startsWith(to);
+        {/* Nav Items */}
+        <nav className="flex-1 flex flex-col gap-1 p-3 overflow-y-auto">
+          {items.map(({ path, icon, label }) => {
+            const active = location.pathname === path;
             return (
-              <Link key={to} to={to} style={{
-                padding: '10px 14px', borderRadius: 'var(--radius-md)',
-                background: isActive ? 'rgba(124,58,237,0.15)' : 'transparent',
-                color: isActive ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                textDecoration: 'none', fontSize: 13, fontWeight: isActive ? 700 : 500,
-                border: isActive ? '1px solid rgba(124,58,237,0.25)' : '1px solid transparent',
-                transition: 'all 0.15s ease',
-              }}>
-                {label}
+              <Link
+                key={path}
+                to={path}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] text-sm font-medium transition-all duration-200 no-underline ${
+                  active
+                    ? 'bg-[var(--color-accent-light)] text-[var(--color-accent)] font-semibold'
+                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)] hover:text-[var(--color-text-primary)]'
+                }`}
+                title={label}
+              >
+                <span className="text-lg w-6 text-center shrink-0">{icon}</span>
+                {!collapsed && <span>{label}</span>}
               </Link>
             );
           })}
         </nav>
 
-        {/* User footer */}
-        <div style={{ paddingTop: 16, borderTop: '1px solid var(--border-color)' }}>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, padding: '0 4px' }}>
-            Signed in as
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: '50%', background: 'var(--gradient-primary)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'white',
-            }}>{user?.name?.[0] || '?'}</div>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 600 }}>{user?.name?.split(' ')[0]}</div>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'capitalize' }}>{user?.role}</div>
+        {/* Collapse + User */}
+        <div className="p-3 border-t border-[var(--color-border-light)]">
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-[var(--radius-md)] text-xs text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] border-none bg-transparent cursor-pointer transition-colors"
+          >
+            {collapsed ? '→' : '← Collapse'}
+          </button>
+          <div className="mt-2 flex items-center gap-2.5 px-2">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] flex items-center justify-center text-xs font-bold text-white shrink-0">
+              {user?.name?.[0] || '?'}
             </div>
+            {!collapsed && (
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-[var(--color-text-primary)] truncate">
+                  {user?.name}
+                </div>
+                <button
+                  onClick={() => {
+                    dispatch(logout());
+                    navigate('/');
+                  }}
+                  className="text-xs text-[var(--color-danger)] hover:underline bg-transparent border-none cursor-pointer p-0"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
-          <button onClick={handleLogout} style={{
-            width: '100%', padding: '8px', borderRadius: 'var(--radius-md)',
-            background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
-            color: 'var(--accent-danger)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)',
-          }}>Sign out</button>
         </div>
       </aside>
 
-      {/* Main content */}
-      <main style={{ flex: 1, padding: '36px 32px', overflow: 'auto', minWidth: 0 }}>
-        {children}
+      {/* Main Content */}
+      <main
+        className={`flex-1 transition-all duration-300 ${
+          collapsed ? 'ml-[68px]' : 'ml-[240px]'
+        }`}
+      >
+        <div className="max-w-[1400px] mx-auto p-6 md:p-8">
+          {children}
+        </div>
       </main>
     </div>
   );

@@ -52,12 +52,16 @@ export const candidatesAPI = {
   }),
   getProfile: () => api.get('/candidates/me'),   // alias used by CandidateDashboard
   getMyProfile: () => api.get('/candidates/me'),
+  updateProfile: (data) => api.put('/candidates/me', data),
   getAll: (params) => api.get('/candidates', { params }),
   getOne: (id) => api.get(`/candidates/${id}`),
   apply: (jobId) => api.post(`/candidates/apply/${jobId}`),
+  applyToJob: (jobId) => api.post(`/candidates/apply/${jobId}`),
   getApplications: () => api.get('/candidates/applications'),  // alias
   getMyApplications: () => api.get('/candidates/applications'),
 };
+
+export const candidateAPI = candidatesAPI;
 
 // ─── AI ────────────────────────────────────────────────────────
 export const aiAPI = {

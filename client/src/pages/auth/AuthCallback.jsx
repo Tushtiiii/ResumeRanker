@@ -30,18 +30,11 @@ export default function AuthCallback() {
   }, []);
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      background: 'var(--bg-primary)',
-    }}>
-      <div style={{
-        width: 52, height: 52, borderRadius: 14,
-        background: 'var(--gradient-primary)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 26, marginBottom: 24, animation: 'pulse-glow 1.5s infinite',
-      }}>🎯</div>
-      <p style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--color-base)]">
+      <div className="w-[52px] h-[52px] rounded-[14px] bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] flex items-center justify-center text-[26px] mb-6 animate-pulse shadow-lg">
+        🎯
+      </div>
+      <p className="text-[var(--color-text-secondary)]">
         Completing sign in...
       </p>
     </div>

@@ -47,19 +47,19 @@ export default function CreateJob() {
 
   return (
     <AppLayout>
-      <div style={{ maxWidth: 860, margin: '0 auto' }}>
-        <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', marginBottom: 8 }}>Post a New Job</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>
+      <div className="max-w-[860px] mx-auto">
+        <div className="mb-8">
+          <h1 className="font-heading text-[2rem] font-bold mb-2 text-[var(--color-text-primary)]">Post a New Job</h1>
+          <p className="text-[var(--color-text-secondary)]">
             AI will automatically parse your job description and extract skills, requirements, and seniority.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           {/* Basic Info */}
-          <div className="glass-card" style={{ padding: 28 }}>
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', marginBottom: 20 }}>Basic Information</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+          <div className="card p-7">
+            <h2 className="font-heading text-[1.1rem] font-bold mb-5 text-[var(--color-text-primary)]">Basic Information</h2>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
               {[
                 { label: 'Job Title *', key: 'title', placeholder: 'Senior MERN Developer' },
                 { label: 'Company', key: 'company', placeholder: 'Acme Inc.' },
@@ -67,12 +67,12 @@ export default function CreateJob() {
                 { label: 'Tags (comma-separated)', key: 'tags', placeholder: 'react, node, mongodb' },
               ].map(({ label, key, placeholder }) => (
                 <div key={key}>
-                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>{label}</label>
+                  <label className="block text-[13px] font-semibold text-[var(--color-text-secondary)] mb-2">{label}</label>
                   <input
                     value={form[key]}
                     onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                     placeholder={placeholder}
-                    style={inputStyle}
+                    className="input-field"
                   />
                 </div>
               ))}
@@ -80,9 +80,9 @@ export default function CreateJob() {
           </div>
 
           {/* Job Description */}
-          <div className="glass-card" style={{ padding: 28 }}>
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', marginBottom: 8 }}>Job Description</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 20 }}>
+          <div className="card p-7">
+            <h2 className="font-heading text-[1.1rem] font-bold mb-2 text-[var(--color-text-primary)]">Job Description</h2>
+            <p className="text-[var(--color-text-secondary)] text-[13px] mb-5">
               Paste the JD text below <strong>or</strong> upload a PDF/DOCX file. AI will extract skills, experience requirements, and more.
             </p>
 
@@ -90,26 +90,28 @@ export default function CreateJob() {
               rows={10} value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="Paste your full job description here..."
-              style={{ ...inputStyle, resize: 'vertical', fontFamily: 'var(--font-body)' }}
+              className="input-field resize-y"
             />
 
-            <div style={{ margin: '16px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>— OR UPLOAD A FILE —</div>
+            <div className="my-4 text-center text-[var(--color-text-muted)] text-[13px]">— OR UPLOAD A FILE —</div>
 
             {/* Dropzone */}
-            <div {...getRootProps()} style={{
-              border: `2px dashed ${isDragActive ? 'var(--accent-primary)' : 'var(--border-color)'}`,
-              borderRadius: 'var(--radius-lg)', padding: '32px 20px', textAlign: 'center',
-              cursor: 'pointer', transition: 'all 0.2s ease',
-              background: isDragActive ? 'rgba(124,58,237,0.05)' : 'rgba(255,255,255,0.02)',
-            }}>
+            <div
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-[var(--radius-lg)] py-8 px-5 text-center cursor-pointer transition-all ${
+                isDragActive
+                  ? 'border-[var(--color-accent)] bg-[rgba(124,58,237,0.04)]'
+                  : 'border-[var(--color-border)] bg-[var(--color-surface-alt)]'
+              }`}
+            >
               <input {...getInputProps()} />
-              <div style={{ fontSize: 36, marginBottom: 10 }}>{file ? '✅' : '📄'}</div>
-              <p style={{ color: file ? 'var(--accent-success)' : 'var(--text-secondary)', fontSize: 14 }}>
+              <div className="text-4xl mb-2.5">{file ? '✅' : '📄'}</div>
+              <p className={`text-sm ${file ? 'text-[var(--color-success)]' : 'text-[var(--color-text-secondary)]'}`}>
                 {file ? file.name : isDragActive ? 'Drop your file here' : 'Drag & drop PDF, DOCX, or TXT — or click to browse'}
               </p>
               {file && (
                 <button type="button" onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                  style={{ marginTop: 10, color: 'var(--accent-danger)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13 }}>
+                  className="mt-2.5 text-[var(--color-danger)] bg-transparent border-none cursor-pointer text-[13px] hover:underline">
                   ✕ Remove file
                 </button>
               )}
@@ -118,42 +120,44 @@ export default function CreateJob() {
 
           {/* AI Result Preview */}
           {aiResult && (
-            <div className="glass-card" style={{ padding: 24, borderColor: 'rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.05)' }}>
-              <h3 style={{ color: 'var(--accent-success)', marginBottom: 16, fontFamily: 'var(--font-heading)' }}>
-                ✨ AI Analysis Complete
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, fontSize: 13 }}>
+            <div className="card p-6 border-[rgba(16,185,129,0.4)] bg-[var(--color-success-light)]">
+              <h3 className="text-[var(--color-success)] font-heading font-bold mb-4">✨ AI Analysis Complete</h3>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 text-[13px]">
                 {aiResult.requiredSkills?.length > 0 && (
                   <div>
-                    <div style={{ color: 'var(--text-muted)', marginBottom: 6 }}>Required Skills</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    <div className="text-[var(--color-text-muted)] mb-1.5">Required Skills</div>
+                    <div className="flex flex-wrap gap-1">
                       {aiResult.requiredSkills.map((s) => (
-                        <span key={s} style={tagStyle('var(--accent-primary)')}>{s}</span>
+                        <span key={s} className="tag">{s}</span>
                       ))}
                     </div>
                   </div>
                 )}
                 {aiResult.experienceRange?.label && (
                   <div>
-                    <div style={{ color: 'var(--text-muted)', marginBottom: 6 }}>Experience</div>
-                    <span style={tagStyle('var(--accent-secondary)')}>{aiResult.experienceRange.label}</span>
+                    <div className="text-[var(--color-text-muted)] mb-1.5">Experience</div>
+                    <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-secondary-light)] border border-[rgba(6,182,212,0.25)] text-[var(--color-secondary)] text-xs font-medium">
+                      {aiResult.experienceRange.label}
+                    </span>
                   </div>
                 )}
                 {aiResult.seniorityLevel && (
                   <div>
-                    <div style={{ color: 'var(--text-muted)', marginBottom: 6 }}>Seniority</div>
-                    <span style={tagStyle('var(--accent-warning)')}>{aiResult.seniorityLevel}</span>
+                    <div className="text-[var(--color-text-muted)] mb-1.5">Seniority</div>
+                    <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-warning-light)] border border-[rgba(245,158,11,0.25)] text-[var(--color-warning)] text-xs font-medium">
+                      {aiResult.seniorityLevel}
+                    </span>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button type="button" onClick={() => navigate('/recruiter')} style={btnSecondary}>
+          <div className="flex gap-3">
+            <button type="button" onClick={() => navigate('/recruiter')} className="btn-secondary py-3 px-6">
               Cancel
             </button>
-            <button type="submit" disabled={loading} style={{ ...btnPrimary, flex: 1 }}>
+            <button type="submit" disabled={loading} className="btn-primary py-3 px-6 flex-1">
               {loading ? '🤖 AI is analyzing your JD...' : '✨ Post Job & Analyze with AI'}
             </button>
           </div>
@@ -162,24 +166,3 @@ export default function CreateJob() {
     </AppLayout>
   );
 }
-
-const inputStyle = {
-  width: '100%', padding: '12px 16px', borderRadius: 'var(--radius-md)',
-  background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)',
-  color: 'var(--text-primary)', fontSize: 14, outline: 'none', fontFamily: 'var(--font-body)',
-};
-const tagStyle = (color) => ({
-  display: 'inline-block', padding: '3px 10px', borderRadius: 'var(--radius-full)',
-  background: `${color}22`, border: `1px solid ${color}44`, color, fontSize: 12, fontWeight: 500,
-});
-const btnPrimary = {
-  padding: '13px 24px', borderRadius: 'var(--radius-md)',
-  background: 'var(--gradient-primary)', color: 'white', border: 'none',
-  fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)',
-};
-const btnSecondary = {
-  padding: '13px 24px', borderRadius: 'var(--radius-md)',
-  background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)',
-  border: '1px solid var(--border-color)', fontSize: 15, fontWeight: 600,
-  cursor: 'pointer', fontFamily: 'var(--font-body)',
-};

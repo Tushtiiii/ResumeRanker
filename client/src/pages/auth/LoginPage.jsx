@@ -10,18 +10,12 @@ const DEMO_ACCOUNTS = {
     email: 'demo.recruiter@talentai.dev',
     password: 'Demo@1234',
     label: '💼 Try Recruiter Demo',
-    color: 'var(--accent-primary)',
-    bg: 'rgba(124,58,237,0.12)',
-    border: 'rgba(124,58,237,0.35)',
     name: 'Sarah Mitchell',
   },
   candidate: {
     email: 'demo.candidate@talentai.dev',
     password: 'Demo@1234',
     label: '👤 Try Candidate Demo',
-    color: 'var(--accent-secondary)',
-    bg: 'rgba(6,182,212,0.12)',
-    border: 'rgba(6,182,212,0.35)',
     name: 'Arjun Sharma',
   },
 };
@@ -61,7 +55,6 @@ export default function LoginPage() {
       toast.success(`👋 Signed in as ${acct.name} (${role})`);
       redirectByRole(data.user.role);
     } catch (err) {
-      // Demo account may not exist yet — inform clearly
       toast.error(
         'Demo account not found. Ask your admin to run: npm run seed (in server/)',
         { duration: 5000 }
@@ -78,144 +71,101 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'var(--bg-primary)', padding: 24, position: 'relative', overflow: 'hidden',
-    }}>
-      {/* Ambient blobs */}
-      <div style={{
-        position: 'absolute', width: 500, height: 500, borderRadius: '50%', pointerEvents: 'none',
-        background: 'radial-gradient(circle, rgba(124,58,237,0.1) 0%, transparent 70%)',
-        top: '5%', right: '10%',
-      }} />
-      <div style={{
-        position: 'absolute', width: 400, height: 400, borderRadius: '50%', pointerEvents: 'none',
-        background: 'radial-gradient(circle, rgba(6,182,212,0.07) 0%, transparent 70%)',
-        bottom: '10%', left: '5%',
-      }} />
+    <div className="min-h-screen flex items-center justify-center bg-[var(--color-base)] px-6 relative overflow-hidden">
+      {/* Decorative blobs */}
+      <div className="absolute w-[500px] h-[500px] rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(124,58,237,0.07)_0%,transparent_70%)] top-[5%] right-[10%]" />
+      <div className="absolute w-[400px] h-[400px] rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(6,182,212,0.05)_0%,transparent_70%)] bottom-[10%] left-[5%]" />
 
-      <div style={{ width: '100%', maxWidth: 460 }}>
+      <div className="w-full max-w-[460px] relative z-10">
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: 16,
-            background: 'var(--gradient-primary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 28, margin: '0 auto 16px', boxShadow: 'var(--shadow-glow)',
-          }}>🎯</div>
-          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.9rem', marginBottom: 6 }}>
+        <div className="text-center mb-9">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg">
+            🎯
+          </div>
+          <h1 className="font-heading text-3xl font-bold mb-1.5 text-[var(--color-text-primary)]">
             Welcome back
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>
+          <p className="text-[var(--color-text-secondary)] text-base">
             Sign in to your TalentAI account
           </p>
         </div>
 
-        {/* ── Demo Accounts ── */}
-        <div style={{
-          background: 'rgba(255,255,255,0.02)',
-          border: '1px solid var(--border-color)',
-          borderRadius: 'var(--radius-lg)',
-          padding: 20,
-          marginBottom: 20,
-        }}>
-          <div style={{
-            fontSize: 11, fontWeight: 700, color: 'var(--text-muted)',
-            letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14,
-          }}>
+        {/* Demo Accounts */}
+        <div className="card p-5 mb-5">
+          <div className="text-[11px] font-bold text-[var(--color-text-muted)] tracking-widest uppercase mb-3.5">
             ⚡ Quick Demo Access
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div className="grid grid-cols-2 gap-2.5">
             {Object.entries(DEMO_ACCOUNTS).map(([role, acct]) => (
               <button
                 key={role}
                 onClick={() => handleDemo(role)}
                 disabled={demoLoading !== null}
-                style={{
-                  padding: '12px 10px',
-                  borderRadius: 'var(--radius-md)',
-                  background: acct.bg,
-                  border: `1px solid ${acct.border}`,
-                  color: acct.color,
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: demoLoading ? 'not-allowed' : 'pointer',
-                  fontFamily: 'var(--font-body)',
-                  transition: 'all 0.2s ease',
-                  opacity: demoLoading && demoLoading !== role ? 0.5 : 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 4,
-                }}
+                className={`flex flex-col items-center gap-1 py-3 px-2.5 rounded-[var(--radius-md)] text-sm font-bold cursor-pointer transition-all border ${
+                  role === 'recruiter'
+                    ? 'bg-[var(--color-accent-light)] border-[rgba(124,58,237,0.2)] text-[var(--color-accent)] hover:border-[var(--color-accent)]'
+                    : 'bg-[var(--color-secondary-light)] border-[rgba(6,182,212,0.2)] text-[var(--color-secondary)] hover:border-[var(--color-secondary)]'
+                } ${demoLoading && demoLoading !== role ? 'opacity-50' : ''} ${demoLoading ? 'cursor-not-allowed' : ''}`}
               >
                 {demoLoading === role ? (
-                  <span style={{ opacity: 0.7 }}>Signing in…</span>
+                  <span className="opacity-70">Signing in…</span>
                 ) : (
                   <>
                     <span>{acct.label}</span>
-                    <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>
-                      {acct.name}
-                    </span>
+                    <span className="text-[10px] opacity-70 font-normal">{acct.name}</span>
                   </>
                 )}
               </button>
             ))}
           </div>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 12, textAlign: 'center' }}>
-            Password: <code style={{ background: 'rgba(255,255,255,0.06)', padding: '1px 6px', borderRadius: 4 }}>Demo@1234</code>
+          <p className="text-[11px] text-[var(--color-text-muted)] mt-3 text-center">
+            Password: <code className="bg-[var(--color-surface-alt)] px-1.5 py-0.5 rounded text-xs">Demo@1234</code>
           </p>
         </div>
 
-        {/* ── Divider ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-          <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
-          <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>or sign in with email</span>
-          <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
+        {/* Divider */}
+        <div className="flex items-center gap-3 mb-5">
+          <div className="flex-1 h-px bg-[var(--color-border)]" />
+          <span className="text-xs text-[var(--color-text-muted)] whitespace-nowrap">or sign in with email</span>
+          <div className="flex-1 h-px bg-[var(--color-border)]" />
         </div>
 
-        {/* ── Login Form ── */}
-        <form onSubmit={handleSubmit} style={{
-          background: 'var(--bg-card)', backdropFilter: 'blur(20px)',
-          border: '1px solid var(--border-color)', borderRadius: 'var(--radius-xl)',
-          padding: 32, display: 'flex', flexDirection: 'column', gap: 18,
-        }}>
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} className="card p-8 flex flex-col gap-5">
           <div>
-            <label style={labelStyle}>Email Address</label>
+            <label className="block text-sm font-semibold text-[var(--color-text-secondary)] mb-2">Email Address</label>
             <input
               type="email" required value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               placeholder="you@company.com"
-              style={inputStyle}
+              className="input-field"
             />
           </div>
           <div>
-            <label style={labelStyle}>Password</label>
+            <label className="block text-sm font-semibold text-[var(--color-text-secondary)] mb-2">Password</label>
             <input
               type="password" required value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               placeholder="••••••••"
-              style={inputStyle}
+              className="input-field"
             />
           </div>
 
-          <button type="submit" disabled={loading || demoLoading !== null} style={btnPrimary(loading)}>
+          <button type="submit" disabled={loading || demoLoading !== null} className="btn-primary w-full py-3 text-base rounded-[var(--radius-md)]">
             {loading ? 'Signing in…' : 'Sign In →'}
           </button>
 
-          {/* Google OAuth */}
-          <div style={{ textAlign: 'center', position: 'relative' }}>
-            <div style={{ height: 1, background: 'var(--border-color)', position: 'absolute', top: '50%', left: 0, right: 0 }} />
-            <span style={{ position: 'relative', background: 'var(--bg-card)', padding: '0 12px', fontSize: 12, color: 'var(--text-muted)' }}>OR</span>
+          {/* Divider */}
+          <div className="relative text-center">
+            <div className="absolute top-1/2 left-0 right-0 h-px bg-[var(--color-border)]" />
+            <span className="relative bg-white px-3 text-xs text-[var(--color-text-muted)]">OR</span>
           </div>
 
-          <a href="/api/auth/google" style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            padding: '12px 20px', borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border-color)', color: 'var(--text-primary)',
-            textDecoration: 'none', fontSize: 14, fontWeight: 500,
-            transition: 'all 0.2s ease', background: 'rgba(255,255,255,0.03)',
-          }}>
+          {/* Google OAuth */}
+          <a
+            href="/api/auth/google"
+            className="flex items-center justify-center gap-2.5 py-3 px-5 rounded-[var(--radius-md)] border border-[var(--color-border)] text-[var(--color-text-primary)] text-sm font-medium hover:bg-[var(--color-surface-alt)] hover:border-[var(--color-accent)] transition-all"
+          >
             <svg width="18" height="18" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -226,9 +176,9 @@ export default function LoginPage() {
           </a>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: 20, color: 'var(--text-secondary)', fontSize: 14 }}>
+        <p className="text-center mt-5 text-[var(--color-text-secondary)] text-sm">
           Don't have an account?{' '}
-          <Link to="/register" style={{ color: 'var(--accent-primary)', fontWeight: 600, textDecoration: 'none' }}>
+          <Link to="/register" className="text-[var(--color-accent)] font-semibold hover:underline">
             Sign up free
           </Link>
         </p>
@@ -236,20 +186,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-const labelStyle = {
-  fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 8,
-};
-const inputStyle = {
-  width: '100%', padding: '12px 16px', borderRadius: 'var(--radius-md)',
-  background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)',
-  color: 'var(--text-primary)', fontSize: 14, outline: 'none',
-  fontFamily: 'var(--font-body)', transition: 'border-color 0.2s ease',
-};
-const btnPrimary = (loading) => ({
-  width: '100%', padding: '13px 20px', borderRadius: 'var(--radius-md)',
-  background: loading ? 'rgba(124,58,237,0.5)' : 'var(--gradient-primary)',
-  color: 'white', border: 'none', fontSize: 15, fontWeight: 700,
-  cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-body)',
-  transition: 'all 0.2s ease',
-});

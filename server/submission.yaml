@@ -1,0 +1,87 @@
+
+# ============================================================================
+# Team identity
+# ============================================================================
+team_name: "SheCodes"  # Used in leaderboard and announcements
+
+primary_contact:
+  name: "Tushtee "
+  email: "[EMAIL_ADDRESS]"   # Used for all organizer communication
+  phone: "+91-9081445577"        # Used for top-50 / top-10 outreach
+
+# ============================================================================
+# Code and reproducibility
+# ============================================================================
+github_repo: "https://github.com/Tushtiiii/IndiaRuns"
+
+sandbox_link: "https://huggingface.co/spaces/YOUR_USERNAME/redrob-ranker"
+
+reproduce_command: "python rank.py --candidates ./candidates.jsonl --out ./submission.csv"
+# The single command that produces submission.csv from candidates.jsonl.
+# Should run end-to-end within 5 minutes on CPU with 16GB RAM and no network.
+
+# ============================================================================
+# Compute environment
+# ============================================================================
+compute:
+  platform: "MacBook Pro M2"                    # Or: "AWS EC2 c5.4xlarge", "Local Linux box", etc.
+  cpu_cores: 8                                  # Number of CPU cores used
+  ram_gb: 16                                    # Available RAM in GB
+  python_version: "3.11.4"                      # python --version
+  os: "macOS 14.2"                              # Or "Ubuntu 22.04 LTS", etc.
+  uses_gpu_for_inference: false                 # Must be false — see compute constraints
+  has_network_during_ranking: false             # Must be false — no API calls during ranking
+  pre_computation_required: false               # true if you pre-compute embeddings or train models offline
+  pre_computation_time_minutes: 0               # Approximate, if applicable
+
+# ============================================================================
+# AI tools declaration
+# ============================================================================
+ai_tools_used:
+  - "Google Gemini 2.5 Flash"   # Primary LLM via LangChain
+  - "Gemini Embeddings (gemini-embedding-001)"  # Semantic vector embeddings
+  - "LlamaParse"                # Cloud PDF/DOCX resume text extraction
+  - "LangChain"                 # AI pipeline orchestration
+  - "Antigravity (Google DeepMind)"  # Used for code review and architecture
+
+ai_usage_summary: |
+  LLM: Google Gemini 2.5 Flash via LangChain ChatGoogleGenerativeAI.
+  Embeddings: gemini-embedding-001 (3072-dim) via LangChain GoogleGenerativeAIEmbeddings;
+              Jina jina-embeddings-v3 as optional alternative.
+  Resume Parsing: LlamaParse cloud API for high-fidelity PDF/DOCX extraction;
+                  pdf-parse + mammoth as local fallback when no API key is set.
+  Orchestration: LangChain RunnableSequence + PromptTemplate chains for all
+                 LLM calls (job-description parsing, resume parsing, candidate
+                 insights, interview-question generation, RAG recruiter chat).
+  No raw candidate PII was fed outside the user's own infrastructure.
+
+# ============================================================================
+# Approach summary (optional but recommended)
+# ============================================================================
+methodology_summary: |
+  Hybrid LangChain-orchestrated ranking pipeline.
+
+  Text Extraction: LlamaParse cloud API (best accuracy on complex PDFs/DOCX);
+  falls back to pdf-parse / mammoth locally.
+
+  LLM: Gemini 2.5 Flash via LangChain PromptTemplate chains — used for
+  structured JSON extraction of job descriptions, resumes, candidate insights,
+  and interview question generation.
+
+  Embeddings: gemini-embedding-001 (3072-dim) or Jina jina-embeddings-v3 for
+  semantic similarity scoring between job and candidate profiles.
+
+  Scoring: Six deterministic components (skill match 30%, experience 25%,
+  project relevance 15%, career growth 10%, soft skills 10%, certs 5%) blended
+  with cosine-semantic similarity (20% weight) into a 0-100 final score.
+  Runtime: ~2-5s per candidate on CPU; no GPU required.
+
+# ============================================================================
+# Declarations
+# ============================================================================
+declarations:
+  read_submission_spec: true        # I have read submission_spec.md in full
+  code_is_original_work: true       # My code is my team's original work (using AI as a tool is fine)
+  no_collusion: true                # I have not coordinated my submission with other teams
+  honeypot_check_done: false        # OPTIONAL — set true if you explicitly checked for honeypots in your ranking
+  reproduction_tested: true         # I have tested that my reproduce_command runs end-to-end

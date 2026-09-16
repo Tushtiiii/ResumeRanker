@@ -5,25 +5,35 @@ import toast from 'react-hot-toast';
 import { jobsAPI, aiAPI } from '../../api';
 import AppLayout from '../../components/layout/AppLayout';
 
-const ScoreBar = ({ label, value, color = 'var(--accent-primary)' }) => (
-  <div style={{ marginBottom: 10 }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
-      <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
-      <span style={{ fontWeight: 700, color }}>{value}/100</span>
+const ScoreBar = ({ label, value }) => {
+  const barColor = value >= 80 ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
+    : value >= 60 ? 'bg-gradient-to-r from-amber-400 to-orange-400'
+    : 'bg-gradient-to-r from-red-400 to-pink-400';
+  const textColor = value >= 80 ? 'text-[var(--color-success)]' : value >= 60 ? 'text-[var(--color-warning)]' : 'text-[var(--color-danger)]';
+  return (
+    <div className="mb-2.5">
+      <div className="flex justify-between mb-1 text-xs">
+        <span className="text-[var(--color-text-secondary)]">{label}</span>
+        <span className={`font-bold ${textColor}`}>{value}/100</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-[var(--color-border-light)] overflow-hidden">
+        <div className={`h-full rounded-full transition-all duration-700 ${barColor}`} style={{ width: `${value}%` }} />
+      </div>
     </div>
-    <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-      <div style={{
-        height: '100%', width: `${value}%`, borderRadius: 3,
-        background: value >= 80 ? 'var(--gradient-success)' : value >= 60 ? 'linear-gradient(90deg, #f59e0b, #f97316)' : 'linear-gradient(90deg, #ef4444, #ec4899)',
-        transition: 'width 0.8s ease',
-      }} />
-    </div>
-  </div>
-);
+  );
+};
 
 const ScoreBadge = ({ score }) => {
-  const cls = score >= 80 ? 'score-high' : score >= 60 ? 'score-medium' : 'score-low';
-  return <div className={`score-badge ${cls}`}>{score}</div>;
+  const cls = score >= 80
+    ? 'bg-[var(--color-success-light)] text-[var(--color-success)] border-[rgba(16,185,129,0.3)]'
+    : score >= 60
+    ? 'bg-[var(--color-warning-light)] text-[var(--color-warning)] border-[rgba(245,158,11,0.3)]'
+    : 'bg-[var(--color-danger-light)] text-[var(--color-danger)] border-[rgba(239,68,68,0.3)]';
+  return (
+    <div className={`w-12 h-12 rounded-xl border flex items-center justify-center text-lg font-extrabold font-heading ${cls}`}>
+      {score}
+    </div>
+  );
 };
 
 export default function JobDetail() {
@@ -78,17 +88,17 @@ export default function JobDetail() {
     );
   };
 
-  if (jobLoading) return <AppLayout><div style={{ padding: 40, textAlign: 'center' }}>Loading...</div></AppLayout>;
+  if (jobLoading) return <AppLayout><div className="p-10 text-center text-[var(--color-text-muted)]">Loading...</div></AppLayout>;
 
   return (
     <AppLayout>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <div className="max-w-[1200px] mx-auto">
         {/* Job Header */}
-        <div className="glass-card" style={{ padding: 28, marginBottom: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+        <div className="card p-7 mb-6">
+          <div className="flex justify-between flex-wrap gap-4">
             <div>
-              <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', marginBottom: 6 }}>{job?.title}</h1>
-              <div style={{ display: 'flex', gap: 16, color: 'var(--text-secondary)', fontSize: 13, flexWrap: 'wrap' }}>
+              <h1 className="font-heading text-[1.8rem] font-bold mb-1.5 text-[var(--color-text-primary)]">{job?.title}</h1>
+              <div className="flex gap-4 text-[var(--color-text-secondary)] text-[13px] flex-wrap">
                 {job?.company && <span>🏢 {job.company}</span>}
                 <span>📍 {job?.location}</span>
                 <span>👥 {job?.applicantCount || 0} applicants</span>
@@ -97,11 +107,11 @@ export default function JobDetail() {
                 )}
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => navigate('/recruiter/interview-questions', { state: { jobId: id, jobTitle: job?.title } })} style={btnSecondary}>
+            <div className="flex gap-2.5">
+              <button onClick={() => navigate('/recruiter/interview-questions', { state: { jobId: id, jobTitle: job?.title } })} className="btn-secondary py-3 px-5 text-sm">
                 🎯 Interview Qs
               </button>
-              <button onClick={() => rankMutation.mutate()} disabled={rankMutation.isPending} style={btnPrimary}>
+              <button onClick={() => rankMutation.mutate()} disabled={rankMutation.isPending} className="btn-primary py-3 px-5 text-sm">
                 {rankMutation.isPending ? '🤖 Ranking...' : '🚀 Run AI Ranking'}
               </button>
             </div>
@@ -109,11 +119,11 @@ export default function JobDetail() {
 
           {/* Required Skills */}
           {job?.parsedProfile?.requiredSkills?.length > 0 && (
-            <div style={{ marginTop: 20 }}>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>Required Skills</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div className="mt-5">
+              <div className="text-xs text-[var(--color-text-muted)] mb-2">Required Skills</div>
+              <div className="flex flex-wrap gap-1.5">
                 {job.parsedProfile.requiredSkills.map((s) => (
-                  <span key={s} style={tagStyle}>{s}</span>
+                  <span key={s} className="tag">{s}</span>
                 ))}
               </div>
             </div>
@@ -122,12 +132,8 @@ export default function JobDetail() {
 
         {/* Compare Banner */}
         {selectedForCompare.length > 1 && (
-          <div style={{
-            padding: '14px 24px', borderRadius: 'var(--radius-md)', marginBottom: 16,
-            background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
-            <span style={{ fontSize: 14 }}>
+          <div className="flex items-center justify-between px-6 py-3.5 rounded-[var(--radius-md)] mb-4 bg-[var(--color-accent-light)] border border-[rgba(124,58,237,0.25)]">
+            <span className="text-sm text-[var(--color-text-primary)]">
               {selectedForCompare.length} candidates selected for comparison
             </span>
             <button onClick={() => navigate('/recruiter/compare', {
@@ -136,21 +142,21 @@ export default function JobDetail() {
                 applications: applications.filter((a) => selectedForCompare.includes(a.candidateId?._id)),
                 job,
               }
-            })} style={{ ...btnPrimary, padding: '8px 18px', fontSize: 13 }}>
+            })} className="btn-primary py-2 px-4.5 text-[13px]">
               Compare Side-by-Side →
             </button>
           </div>
         )}
 
         {/* Filters */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div className="flex gap-3 mb-5 flex-wrap">
           <input
             placeholder="Min score (0-100)"
             value={filters.minScore}
             onChange={(e) => setFilters({ ...filters, minScore: e.target.value })}
-            style={{ ...filterInput, width: 160 }}
+            className="input-field w-40"
           />
-          <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })} style={{ ...filterInput, width: 160 }}>
+          <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })} className="input-field w-40">
             <option value="">All Statuses</option>
             <option value="applied">Applied</option>
             <option value="shortlisted">Shortlisted</option>
@@ -160,78 +166,69 @@ export default function JobDetail() {
             placeholder="Filter by skill"
             value={filters.skills}
             onChange={(e) => setFilters({ ...filters, skills: e.target.value })}
-            style={{ ...filterInput, flex: 1, minWidth: 140 }}
+            className="input-field flex-1 min-w-[140px]"
           />
-          <button onClick={() => refetchRanked()} style={{ ...btnPrimary, padding: '10px 18px', fontSize: 13 }}>
+          <button onClick={() => refetchRanked()} className="btn-primary py-2.5 px-4.5 text-[13px]">
             Apply Filters
           </button>
         </div>
 
         {/* Ranked Candidates */}
         {rankedLoading ? (
-          <div style={{ display: 'grid', gap: 12 }}>
-            {[1,2,3].map((i) => <div key={i} className="skeleton" style={{ height: 120, borderRadius: 'var(--radius-lg)' }} />)}
+          <div className="grid gap-3">
+            {[1,2,3].map((i) => <div key={i} className="skeleton h-[120px] rounded-[var(--radius-lg)]" />)}
           </div>
         ) : applications.length === 0 ? (
-          <div className="glass-card" style={{ padding: 60, textAlign: 'center' }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🏆</div>
-            <h3 style={{ marginBottom: 8, fontFamily: 'var(--font-heading)' }}>No ranked candidates yet</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>
+          <div className="card p-16 text-center">
+            <div className="text-5xl mb-4">🏆</div>
+            <h3 className="font-heading font-bold mb-2 text-[var(--color-text-primary)]">No ranked candidates yet</h3>
+            <p className="text-[var(--color-text-secondary)] mb-6">
               Once candidates apply, click "Run AI Ranking" to score and rank them.
             </p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gap: 12 }}>
+          <div className="grid gap-3">
             {applications.map((app, i) => {
               const c = app.candidateId;
               const isExpanded = selectedApp === app._id;
               const insights = activeInsights[app._id];
 
               return (
-                <div key={app._id} className="glass-card" style={{
-                  padding: 20, cursor: 'pointer',
-                  borderColor: selectedForCompare.includes(c?._id) ? 'rgba(124,58,237,0.5)' : undefined,
-                }}>
+                <div key={app._id} className={`card p-5 cursor-pointer transition-colors ${
+                  selectedForCompare.includes(c?._id) ? 'border-[rgba(124,58,237,0.5)]' : ''
+                }`}>
                   <div onClick={() => setSelectedApp(isExpanded ? null : app._id)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                    className="flex items-center gap-4 flex-wrap">
                     {/* Rank */}
-                    <div style={{
-                      width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                      background: i < 3 ? `var(--rank-${i+1}, var(--gradient-primary))` : 'rgba(255,255,255,0.08)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 14, fontWeight: 800, fontFamily: 'var(--font-heading)',
-                      ...(i === 0 ? { background: 'linear-gradient(135deg,#ffd700,#ff8c00)', color: '#000' }
-                        : i === 1 ? { background: 'linear-gradient(135deg,#c0c0c0,#a8a8a8)', color: '#000' }
-                        : i === 2 ? { background: 'linear-gradient(135deg,#cd7f32,#a0522d)', color: 'white' }
-                        : { color: 'var(--text-secondary)' }),
-                    }}>#{app.rank || i+1}</div>
+                    <div className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-sm font-extrabold font-heading ${
+                      i === 0 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-black'
+                      : i === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-black'
+                      : i === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-800 text-white'
+                      : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'
+                    }`}>#{app.rank || i+1}</div>
 
                     {/* Info */}
-                    <div style={{ flex: 1, minWidth: 200 }}>
-                      <div style={{ fontWeight: 700, fontSize: '1rem', fontFamily: 'var(--font-heading)', marginBottom: 4 }}>
+                    <div className="flex-1 min-w-[200px]">
+                      <div className="font-bold text-base font-heading mb-1 text-[var(--color-text-primary)]">
                         {c?.userId?.name || 'Candidate'}
                       </div>
-                      <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{c?.headline}</div>
+                      <div className="text-[13px] text-[var(--color-text-secondary)]">{c?.headline}</div>
                     </div>
 
                     {/* Score */}
                     {app.finalScore != null && <ScoreBadge score={app.finalScore} />}
 
                     {/* Actions */}
-                    <div style={{ display: 'flex', gap: 8 }} onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => toggleCompare(c?._id)} style={{
-                        padding: '6px 12px', borderRadius: 'var(--radius-md)', fontSize: 12,
-                        background: selectedForCompare.includes(c?._id) ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.05)',
-                        border: '1px solid var(--border-color)', color: 'var(--text-secondary)', cursor: 'pointer',
-                      }}>
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => toggleCompare(c?._id)} className={`py-1.5 px-3 rounded-[var(--radius-md)] text-xs border cursor-pointer transition-colors ${
+                        selectedForCompare.includes(c?._id)
+                          ? 'bg-[var(--color-accent-light)] border-[rgba(124,58,237,0.3)] text-[var(--color-accent)]'
+                          : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
+                      }`}>
                         {selectedForCompare.includes(c?._id) ? '✓ Compare' : 'Compare'}
                       </button>
                       {app.finalScore != null && (
-                        <button onClick={() => fetchInsights(id, c?._id, app._id)} style={{
-                          padding: '6px 12px', borderRadius: 'var(--radius-md)', fontSize: 12,
-                          background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)',
-                          color: 'var(--accent-primary)', cursor: 'pointer',
-                        }}>
+                        <button onClick={() => fetchInsights(id, c?._id, app._id)} className="py-1.5 px-3 rounded-[var(--radius-md)] text-xs bg-[var(--color-accent-light)] border border-[rgba(124,58,237,0.25)] text-[var(--color-accent)] cursor-pointer hover:border-[var(--color-accent)] transition-colors">
                           {insightsLoading === app._id ? '⏳' : '💡 Insights'}
                         </button>
                       )}
@@ -240,12 +237,12 @@ export default function JobDetail() {
 
                   {/* Expanded View */}
                   {isExpanded && (
-                    <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border-color)' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+                    <div className="mt-5 pt-5 border-t border-[var(--color-border-light)]">
+                      <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
                         {/* Score Breakdown */}
                         {app.scoreBreakdown && (
                           <div>
-                            <h4 style={{ fontFamily: 'var(--font-heading)', marginBottom: 14, fontSize: 14 }}>Score Breakdown</h4>
+                            <h4 className="font-heading font-bold mb-3.5 text-sm text-[var(--color-text-primary)]">Score Breakdown</h4>
                             <ScoreBar label="Skill Match (30%)" value={app.scoreBreakdown.skillMatch} />
                             <ScoreBar label="Experience Match (25%)" value={app.scoreBreakdown.experienceMatch} />
                             <ScoreBar label="Project Relevance (15%)" value={app.scoreBreakdown.projectRelevance} />
@@ -258,9 +255,9 @@ export default function JobDetail() {
 
                         {/* Skills + Info */}
                         <div>
-                          <div style={{ marginBottom: 16 }}>
-                            <h4 style={{ fontFamily: 'var(--font-heading)', marginBottom: 10, fontSize: 14 }}>Candidate Info</h4>
-                            <div style={{ fontSize: 13, color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <div className="mb-4">
+                            <h4 className="font-heading font-bold mb-2.5 text-sm text-[var(--color-text-primary)]">Candidate Info</h4>
+                            <div className="text-[13px] text-[var(--color-text-secondary)] flex flex-col gap-1">
                               <span>🕐 {c?.totalExperienceYears} years experience</span>
                               {c?.location && <span>📍 {c.location}</span>}
                               {c?.topDomains?.length > 0 && <span>🏷 {c.topDomains.join(', ')}</span>}
@@ -268,10 +265,10 @@ export default function JobDetail() {
                           </div>
                           {c?.skills?.length > 0 && (
                             <div>
-                              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>Skills</div>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                              <div className="text-xs text-[var(--color-text-muted)] mb-2">Skills</div>
+                              <div className="flex flex-wrap gap-1">
                                 {c.skills.slice(0, 12).map((s) => (
-                                  <span key={s} style={tagStyle}>{s}</span>
+                                  <span key={s} className="tag">{s}</span>
                                 ))}
                               </div>
                             </div>
@@ -280,26 +277,22 @@ export default function JobDetail() {
 
                         {/* AI Insights */}
                         {insights && (
-                          <div style={{ gridColumn: '1 / -1' }}>
-                            <h4 style={{ fontFamily: 'var(--font-heading)', marginBottom: 14, fontSize: 14 }}>🤖 AI Insights</h4>
-                            <div style={{
-                              padding: 16, borderRadius: 'var(--radius-md)',
-                              background: 'rgba(124,58,237,0.05)', border: '1px solid rgba(124,58,237,0.2)',
-                              fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 12,
-                            }}>
+                          <div className="col-span-full">
+                            <h4 className="font-heading font-bold mb-3.5 text-sm text-[var(--color-text-primary)]">🤖 AI Insights</h4>
+                            <div className="p-4 rounded-[var(--radius-md)] bg-[var(--color-accent-light)] border border-[rgba(124,58,237,0.15)] text-[13px] text-[var(--color-text-secondary)] leading-relaxed mb-3">
                               {insights.summary}
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                            <div className="grid grid-cols-2 gap-4">
                               <div>
-                                <div style={{ fontSize: 12, color: 'var(--accent-success)', fontWeight: 700, marginBottom: 8 }}>✅ Strengths</div>
+                                <div className="text-xs text-[var(--color-success)] font-bold mb-2">✅ Strengths</div>
                                 {insights.strengths?.map((s, i) => (
-                                  <div key={i} style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>• {s}</div>
+                                  <div key={i} className="text-[13px] text-[var(--color-text-secondary)] mb-1">• {s}</div>
                                 ))}
                               </div>
                               <div>
-                                <div style={{ fontSize: 12, color: 'var(--accent-warning)', fontWeight: 700, marginBottom: 8 }}>⚠️ Concerns</div>
+                                <div className="text-xs text-[var(--color-warning)] font-bold mb-2">⚠️ Concerns</div>
                                 {insights.concerns?.map((c, i) => (
-                                  <div key={i} style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>• {c}</div>
+                                  <div key={i} className="text-[13px] text-[var(--color-text-secondary)] mb-1">• {c}</div>
                                 ))}
                               </div>
                             </div>
@@ -317,25 +310,3 @@ export default function JobDetail() {
     </AppLayout>
   );
 }
-
-const tagStyle = {
-  display: 'inline-block', padding: '3px 10px', borderRadius: 'var(--radius-full)',
-  background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)',
-  color: 'var(--accent-primary)', fontSize: 11, fontWeight: 500,
-};
-const filterInput = {
-  padding: '10px 14px', borderRadius: 'var(--radius-md)',
-  background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)',
-  color: 'var(--text-primary)', fontSize: 13, outline: 'none', fontFamily: 'var(--font-body)',
-};
-const btnPrimary = {
-  padding: '12px 20px', borderRadius: 'var(--radius-md)',
-  background: 'var(--gradient-primary)', color: 'white', border: 'none',
-  fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)',
-};
-const btnSecondary = {
-  padding: '12px 20px', borderRadius: 'var(--radius-md)',
-  background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)',
-  color: 'var(--text-secondary)', fontSize: 14, fontWeight: 600,
-  cursor: 'pointer', fontFamily: 'var(--font-body)',
-};

@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useQuery } from '@tanstack/react-query';
 import { jobsAPI } from '../../api';
 import AppLayout from '../../components/layout/AppLayout';
 
-const StatCard = ({ icon, label, value, color }) => (
-  <div className="glass-card" style={{ padding: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
-    <div style={{
-      width: 52, height: 52, borderRadius: 'var(--radius-md)',
-      background: `${color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
-    }}>{icon}</div>
+const StatCard = ({ icon, label, value, colorClass }) => (
+  <div className="card p-6 flex items-center gap-4">
+    <div className={`w-[52px] h-[52px] rounded-xl flex items-center justify-center text-2xl ${colorClass}`}>
+      {icon}
+    </div>
     <div>
-      <div style={{ fontSize: '1.8rem', fontFamily: 'var(--font-heading)', fontWeight: 800, color }}>{value}</div>
-      <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{label}</div>
+      <div className={`text-3xl font-heading font-extrabold ${colorClass.includes('text-') ? '' : 'text-[var(--color-text-primary)]'}`} style={{ color: colorClass.includes('text-') ? undefined : undefined }}>
+        {value}
+      </div>
+      <div className="text-sm text-[var(--color-text-secondary)]">{label}</div>
     </div>
   </div>
 );
@@ -33,100 +33,95 @@ export default function RecruiterDashboard() {
 
   return (
     <AppLayout>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <div className="max-w-[1200px] mx-auto">
         {/* Header */}
-        <div style={{ marginBottom: 32, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+        <div className="mb-8 flex items-start justify-between flex-wrap gap-4">
           <div>
-            <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', marginBottom: 6 }}>
+            <h1 className="font-heading text-3xl font-bold mb-1.5 text-[var(--color-text-primary)]">
               Welcome back, {user?.name?.split(' ')[0]} 👋
             </h1>
-            <p style={{ color: 'var(--text-secondary)' }}>Here's an overview of your recruitment activity</p>
+            <p className="text-[var(--color-text-secondary)]">Here's an overview of your recruitment activity</p>
           </div>
-          <button onClick={() => navigate('/recruiter/jobs/new')} style={{
-            padding: '12px 24px', borderRadius: 'var(--radius-full)',
-            background: 'var(--gradient-primary)', color: 'white', border: 'none',
-            fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)',
-            boxShadow: 'var(--shadow-glow)',
-          }}>
+          <button
+            onClick={() => navigate('/recruiter/jobs/new')}
+            className="btn-primary py-3 px-6 rounded-full text-sm"
+          >
             ➕ Post New Job
           </button>
         </div>
 
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 40 }}>
-          <StatCard icon="📋" label="Total Jobs" value={jobs.length} color="var(--accent-primary)" />
-          <StatCard icon="✅" label="Active Jobs" value={activeJobs} color="var(--accent-success)" />
-          <StatCard icon="👥" label="Total Applicants" value={totalApplicants} color="var(--accent-secondary)" />
-          <StatCard icon="🏆" label="Shortlisted" value={jobs.reduce((s, j) => s + (j.shortlistedCount || 0), 0)} color="var(--accent-warning)" />
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-10">
+          <StatCard icon="📋" label="Total Jobs" value={jobs.length} colorClass="bg-[var(--color-accent-light)] text-[var(--color-accent)]" />
+          <StatCard icon="✅" label="Active Jobs" value={activeJobs} colorClass="bg-[var(--color-success-light)] text-[var(--color-success)]" />
+          <StatCard icon="👥" label="Total Applicants" value={totalApplicants} colorClass="bg-[var(--color-secondary-light)] text-[var(--color-secondary)]" />
+          <StatCard icon="🏆" label="Shortlisted" value={jobs.reduce((s, j) => s + (j.shortlistedCount || 0), 0)} colorClass="bg-[var(--color-warning-light)] text-[var(--color-warning)]" />
         </div>
 
         {/* Jobs List */}
-        <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.3rem' }}>Your Job Postings</h2>
-          <button onClick={() => navigate('/recruiter/analytics')} style={{
-            padding: '8px 16px', borderRadius: 'var(--radius-md)',
-            background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.3)',
-            color: 'var(--accent-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            fontFamily: 'var(--font-body)',
-          }}>
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="font-heading text-xl font-bold text-[var(--color-text-primary)]">Your Job Postings</h2>
+          <button
+            onClick={() => navigate('/recruiter/analytics')}
+            className="px-4 py-2 rounded-[var(--radius-md)] bg-[var(--color-secondary-light)] border border-[rgba(6,182,212,0.25)] text-[var(--color-secondary)] text-sm font-semibold cursor-pointer hover:border-[var(--color-secondary)] transition-colors"
+          >
             📈 View Analytics
           </button>
         </div>
 
         {isLoading ? (
-          <div style={{ display: 'grid', gap: 16 }}>
+          <div className="grid gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="skeleton" style={{ height: 100, borderRadius: 'var(--radius-lg)' }} />
+              <div key={i} className="skeleton h-[100px] rounded-[var(--radius-lg)]" />
             ))}
           </div>
         ) : jobs.length === 0 ? (
-          <div className="glass-card" style={{ padding: 60, textAlign: 'center' }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📭</div>
-            <h3 style={{ marginBottom: 8, fontFamily: 'var(--font-heading)' }}>No jobs posted yet</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>Post your first job and let AI find the best candidates</p>
-            <button onClick={() => navigate('/recruiter/jobs/new')} style={{
-              padding: '12px 28px', borderRadius: 'var(--radius-full)',
-              background: 'var(--gradient-primary)', color: 'white', border: 'none',
-              fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-body)',
-            }}>
+          <div className="card p-16 text-center">
+            <div className="text-5xl mb-4">📭</div>
+            <h3 className="font-heading font-bold mb-2 text-[var(--color-text-primary)]">No jobs posted yet</h3>
+            <p className="text-[var(--color-text-secondary)] mb-6">Post your first job and let AI find the best candidates</p>
+            <button onClick={() => navigate('/recruiter/jobs/new')} className="btn-primary py-3 px-7 rounded-full text-sm">
               Post a Job Now
             </button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gap: 12 }}>
+          <div className="grid gap-3">
             {jobs.map((job) => (
-              <div key={job._id} className="glass-card" style={{ padding: '20px 24px', cursor: 'pointer' }}
-                onClick={() => navigate(`/recruiter/jobs/${job._id}`)}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <div
+                key={job._id}
+                className="card px-6 py-5 cursor-pointer hover:border-[var(--color-accent)] transition-colors"
+                onClick={() => navigate(`/recruiter/jobs/${job._id}`)}
+              >
+                <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem' }}>{job.title}</h3>
-                      <span style={{
-                        padding: '2px 10px', borderRadius: 'var(--radius-full)', fontSize: 11, fontWeight: 600,
-                        background: job.status === 'active' ? 'rgba(16,185,129,0.15)' : 'rgba(100,116,139,0.15)',
-                        color: job.status === 'active' ? 'var(--accent-success)' : 'var(--text-muted)',
-                        border: `1px solid ${job.status === 'active' ? 'rgba(16,185,129,0.3)' : 'rgba(100,116,139,0.2)'}`,
-                        textTransform: 'capitalize',
-                      }}>{job.status}</span>
+                    <div className="flex items-center gap-2.5 mb-1.5">
+                      <h3 className="font-heading text-base font-bold text-[var(--color-text-primary)]">{job.title}</h3>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border capitalize ${
+                        job.status === 'active'
+                          ? 'bg-[var(--color-success-light)] text-[var(--color-success)] border-[rgba(16,185,129,0.25)]'
+                          : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] border-[var(--color-border)]'
+                      }`}>
+                        {job.status}
+                      </span>
                     </div>
-                    <div style={{ display: 'flex', gap: 16, color: 'var(--text-secondary)', fontSize: 13 }}>
+                    <div className="flex gap-4 text-[var(--color-text-secondary)] text-sm">
                       {job.company && <span>🏢 {job.company}</span>}
                       <span>📍 {job.location || 'Remote'}</span>
                       <span>📅 {new Date(job.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 20, textAlign: 'center' }}>
+                  <div className="flex gap-5 text-center">
                     <div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: 800, fontFamily: 'var(--font-heading)', color: 'var(--accent-secondary)' }}>
+                      <div className="text-xl font-extrabold font-heading text-[var(--color-secondary)]">
                         {job.applicantCount || 0}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Applicants</div>
+                      <div className="text-[11px] text-[var(--color-text-muted)]">Applicants</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '1.4rem', fontWeight: 800, fontFamily: 'var(--font-heading)', color: 'var(--accent-success)' }}>
+                      <div className="text-xl font-extrabold font-heading text-[var(--color-success)]">
                         {job.shortlistedCount || 0}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Shortlisted</div>
+                      <div className="text-[11px] text-[var(--color-text-muted)]">Shortlisted</div>
                     </div>
                   </div>
                 </div>

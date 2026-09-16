@@ -182,3 +182,44 @@ exports.getMyApplications = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch applications.' });
   }
 };
+
+// ─── PUT /api/candidates/me ───────────────────────────────────────────────────
+exports.updateMyProfile = async (req, res) => {
+  try {
+    const { headline, summary, skills, location } = req.body;
+    const updateData = {
+      userId: req.user._id,
+      ...(headline !== undefined && { headline }),
+      ...(summary !== undefined && { summary }),
+      ...(skills !== undefined && { skills }),
+      ...(location !== undefined && { location }),
+    };
+
+    if (headline !== undefined || summary !== undefined || skills !== undefined) {
+      const currentCandidate = await Candidate.findOne({ userId: req.user._id });
+      const finalHeadline = headline !== undefined ? headline : (currentCandidate?.headline || '');
+      const finalSummary = summary !== undefined ? summary : (currentCandidate?.summary || '');
+      const finalSkills = skills !== undefined ? skills : (currentCandidate?.skills || []);
+      const finalExp = currentCandidate?.totalExperienceYears || 0;
+
+      const embeddingText = `${finalHeadline} ${finalSummary} ${finalSkills.join(' ')} ${finalExp} years experience`;
+      try {
+        updateData.embeddings = await generateEmbedding(embeddingText);
+      } catch (embErr) {
+        console.error('Embedding regeneration error:', embErr.message);
+      }
+    }
+
+    const candidate = await Candidate.findOneAndUpdate(
+      { userId: req.user._id },
+      updateData,
+      { new: true, upsert: true, runValidators: true }
+    ).populate('userId', 'name email avatar').select('-resumeRawText -embeddings');
+
+    res.json({ candidate });
+  } catch (err) {
+    console.error('Update profile error:', err);
+    res.status(500).json({ error: 'Failed to update profile.' });
+  }
+};
+
