@@ -7,11 +7,13 @@ import DetailModal from './ranker/DetailModal';
 import { SAMPLE_CANDIDATES } from './ranker/sampleData';
 
 const API_BASE = 'http://localhost:5000/api';
-
+const MAX_RANKER_UPLOAD_MB = 25;
+const MAX_RANKER_UPLOAD_BYTES = MAX_RANKER_UPLOAD_MB * 1024 * 1024;
+ 
 export default function ResumeRanker() {
   const { token, user } = useSelector((s) => s.auth);
   const isGuest = !token || !user;
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [showResultAlert, setShowResultAlert] = useState(false);
@@ -27,6 +29,17 @@ export default function ResumeRanker() {
   const [search, setSearch] = useState('');
   const [minScore, setMinScore] = useState(0);
   const [sortOrder, setSortOrder] = useState('desc');
+
+  const handleFileChange = (file, setFile, label) => {
+    if (file && file.size > MAX_RANKER_UPLOAD_BYTES) {
+      setFile(null);
+      setError(`${label} must be ${MAX_RANKER_UPLOAD_MB} MB or smaller.`);
+      return;
+    }
+
+    setFile(file || null);
+    setError('');
+  };
 
   const loadSample = () => { setCandidateInputMode('text'); setCandidatesText(JSON.stringify(SAMPLE_CANDIDATES, null, 2)); };
 
@@ -132,7 +145,7 @@ export default function ResumeRanker() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h3 className="font-heading font-bold text-sm mb-3 text-[var(--color-text-primary)]">📋 Job Description</h3>
-              <UploadZone label="Upload JD File" accept=".pdf,.docx,.txt" file={jdFile} onChange={(e) => setJdFile(e.target.files[0] || null)} hint="PDF, DOCX, or TXT · max 10 MB" />
+              <UploadZone label="Upload JD File" accept=".pdf,.docx,.txt" file={jdFile} onChange={(e) => handleFileChange(e.target.files[0], setJdFile, 'Job description file')} hint="PDF, DOCX, or TXT · max 25 MB" />
             </div>
             <div>
               <div className="flex justify-between items-center mb-3">
@@ -153,7 +166,7 @@ export default function ResumeRanker() {
               </div>
               {candidateInputMode === 'file' ? (
                 <>
-                  <UploadZone label="Upload Candidates File" accept=".json,.jsonl" file={candidatesFile} onChange={(e) => setCandidatesFile(e.target.files[0] || null)} hint=".json or .jsonl" />
+                  <UploadZone label="Upload Candidates File" accept=".json,.jsonl" file={candidatesFile} onChange={(e) => handleFileChange(e.target.files[0], setCandidatesFile, 'Candidates file')} hint=".json or .jsonl · max 25 MB" />
                   <p className="text-[11px] text-[var(--color-text-muted)] mt-2">Supports .jsonl (JSON Lines) or .json array of candidate objects.</p>
                 </>
               ) : (

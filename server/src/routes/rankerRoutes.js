@@ -5,6 +5,10 @@ const path = require('path');
 const { protect, authorize, optionalProtect } = require('../middleware/auth');
 const { analyzeResumes, parseJD, exportRankedResults } = require('../controllers/rankerController');
 
+// The ranker keeps uploads in memory while it parses them, so retain a
+// deliberate per-file ceiling shared with the client-side validation.
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+
 // JD & Candidates File Filter (PDF / DOCX / TXT for JD; JSON / JSONL for Candidates)
 const jdFilter = (req, file, cb) => {
   if (file.fieldname === 'jdFile') {
@@ -24,7 +28,7 @@ const jdFilter = (req, file, cb) => {
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10 MB
+    fileSize: MAX_UPLOAD_BYTES,
   },
   fileFilter: jdFilter,
 });

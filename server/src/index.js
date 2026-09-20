@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const multer = require('multer');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 
@@ -13,9 +14,10 @@ const candidateRoutes = require('./routes/candidateRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const rankerRoutes = require('./routes/rankerRoutes'); 
+const resumeRoutes = require('./routes/resumeRoutes');
 
 const app = express();
- 
+  
 // ─── Connect Database ─────────────────────────────────────────────────────────
 connectDB();
 
@@ -70,6 +72,7 @@ app.use('/api/candidates', candidateRoutes);
 app.use('/api/ai', aiLimiter, aiRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ranker', aiLimiter, rankerRoutes);
+app.use('/api/resumes', resumeRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
@@ -78,8 +81,24 @@ app.use((req, res) => {
 
 // ─── Global Error Handler ─────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({
+        error: `${err.field || 'Uploaded file'} exceeds its file-size limit.`,
+        code: err.code,
+        field: err.field,
+      });
+    }
+
+    return res.status(400).json({
+      error: 'Invalid file upload.',
+      code: err.code,
+      field: err.field,
+    });
+  }
+
   console.error('🔥 Unhandled Error:', err);
-  const statusCode = err.statusCode || 500;
+  const statusCode = err.statusCode || err.status || 500;
   res.status(statusCode).json({
     error: err.message || 'Internal Server Error',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),

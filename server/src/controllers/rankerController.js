@@ -38,9 +38,55 @@ const cleanJSON = (raw) =>
  *   .json  → standard JSON array
  *   .jsonl → JSON Lines (one object per line, blank lines ignored)
  */
+const decodeCandidateText = (buffer) => {
+  if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+    throw new Error('Candidates file is empty.');
+  }
+
+  // JSON is text. Handle the common Unicode encodings used by spreadsheet and
+  // enterprise exports, rather than treating every upload as UTF-8.
+  let text;
+  if (buffer.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]))) {
+    text = buffer.subarray(3).toString('utf8');
+  } else if (buffer.subarray(0, 2).equals(Buffer.from([0xff, 0xfe]))) {
+    text = buffer.subarray(2).toString('utf16le');
+  } else if (buffer.subarray(0, 2).equals(Buffer.from([0xfe, 0xff]))) {
+    // Node has no utf16be decoder, so swap each pair before decoding.
+    const utf16le = Buffer.from(buffer.subarray(2));
+    for (let i = 0; i + 1 < utf16le.length; i += 2) {
+      [utf16le[i], utf16le[i + 1]] = [utf16le[i + 1], utf16le[i]];
+    }
+    text = utf16le.toString('utf16le');
+  } else if (buffer.length >= 2 && buffer[1] === 0x00 && (buffer[0] === 0x5b || buffer[0] === 0x7b)) {
+    // UTF-16LE JSON without a BOM (some editors save text this way).
+    text = buffer.toString('utf16le');
+  } else if (buffer.length >= 2 && buffer[0] === 0x00 && (buffer[1] === 0x5b || buffer[1] === 0x7b)) {
+    // UTF-16BE JSON without a BOM.
+    const utf16le = Buffer.from(buffer);
+    for (let i = 0; i + 1 < utf16le.length; i += 2) {
+      [utf16le[i], utf16le[i + 1]] = [utf16le[i + 1], utf16le[i]];
+    }
+    text = utf16le.toString('utf16le');
+  } else {
+    text = buffer.toString('utf8');
+  }
+
+  // A filename extension can be changed, so do not feed binary data into the
+  // JSON parser and return its misleading "Unexpected token" message.
+  const trimmed = text.trim();
+  if (!trimmed) throw new Error('Candidates file is empty.');
+  if (/[\u0000-\u0008\u000e-\u001f]/.test(trimmed)) {
+    throw new Error(
+      'Candidates file appears to contain binary data, not JSON text. Export it as a UTF-8 .json or .jsonl file and upload that exported file.'
+    );
+  }
+
+  return trimmed;
+};
+
 const parseCandidatesFromBuffer = (buffer, originalname) => {
   const ext = path.extname(originalname).toLowerCase();
-  const text = buffer.toString('utf-8').trim();
+  const text = decodeCandidateText(buffer);
 
   if (ext === '.jsonl') {
     // JSON Lines: split on newlines, parse each non-empty line

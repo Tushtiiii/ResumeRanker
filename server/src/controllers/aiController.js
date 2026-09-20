@@ -173,10 +173,10 @@ exports.getStatus = async (req, res) => {
   const { activeProvider } = require('../services/aiService');
   res.json({
     provider: activeProvider,
-    embeddingDimensions: activeProvider === 'gemini' ? 768 : 1536,
+    embeddingDimensions: activeProvider === 'gemini' ? 3072 : 1536,
     models: {
-      llm: activeProvider === 'gemini' ? 'gemini-1.5-flash' : 'gpt-4o-mini',
-      embedding: activeProvider === 'gemini' ? 'text-embedding-004' : 'text-embedding-3-small',
+      llm: activeProvider === 'gemini' ? 'gemini-3.6-flash' : 'gpt-4o-mini',
+      embedding: activeProvider === 'gemini' ? 'gemini-embedding-001' : 'text-embedding-3-small',
     },
   });
 };
