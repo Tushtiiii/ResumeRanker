@@ -32,6 +32,39 @@ const cleanJSON = (raw) =>
     .replace(/```/g, '')
     .trim();
 
+// Some Windows tools write UTF-16 without a byte-order mark.  Looking only at
+// the first character is not enough here: exported JSON commonly starts with a
+// newline or space before its opening `[` / `{`.  Inspect a small prefix for
+// the alternating NUL-byte pattern instead.
+const detectBomlessUtf16Encoding = (buffer) => {
+  const byteLength = Math.min(buffer.length - (buffer.length % 2), 1024);
+  if (byteLength < 8) return null;
+
+  let evenNuls = 0;
+  let oddNuls = 0;
+  const pairs = byteLength / 2;
+
+  for (let i = 0; i < byteLength; i += 2) {
+    if (buffer[i] === 0x00) evenNuls += 1;
+    if (buffer[i + 1] === 0x00) oddNuls += 1;
+  }
+
+  // UTF-16 JSON written with ASCII structural characters has NUL bytes in one
+  // byte position for most character pairs. Require a clear majority so that
+  // arbitrary binary uploads still reach the binary-data validation below.
+  if (oddNuls / pairs >= 0.4 && oddNuls > evenNuls * 3) return 'utf16le';
+  if (evenNuls / pairs >= 0.4 && evenNuls > oddNuls * 3) return 'utf16be';
+  return null;
+};
+
+const decodeUtf16Be = (buffer) => {
+  const utf16le = Buffer.from(buffer);
+  for (let i = 0; i + 1 < utf16le.length; i += 2) {
+    [utf16le[i], utf16le[i + 1]] = [utf16le[i + 1], utf16le[i]];
+  }
+  return utf16le.toString('utf16le');
+};
+
 /**
  * Parse candidates from an uploaded file buffer.
  * Supports:
@@ -52,21 +85,13 @@ const decodeCandidateText = (buffer) => {
     text = buffer.subarray(2).toString('utf16le');
   } else if (buffer.subarray(0, 2).equals(Buffer.from([0xfe, 0xff]))) {
     // Node has no utf16be decoder, so swap each pair before decoding.
-    const utf16le = Buffer.from(buffer.subarray(2));
-    for (let i = 0; i + 1 < utf16le.length; i += 2) {
-      [utf16le[i], utf16le[i + 1]] = [utf16le[i + 1], utf16le[i]];
-    }
-    text = utf16le.toString('utf16le');
-  } else if (buffer.length >= 2 && buffer[1] === 0x00 && (buffer[0] === 0x5b || buffer[0] === 0x7b)) {
+    text = decodeUtf16Be(buffer.subarray(2));
+  } else if (detectBomlessUtf16Encoding(buffer) === 'utf16le') {
     // UTF-16LE JSON without a BOM (some editors save text this way).
     text = buffer.toString('utf16le');
-  } else if (buffer.length >= 2 && buffer[0] === 0x00 && (buffer[1] === 0x5b || buffer[1] === 0x7b)) {
+  } else if (detectBomlessUtf16Encoding(buffer) === 'utf16be') {
     // UTF-16BE JSON without a BOM.
-    const utf16le = Buffer.from(buffer);
-    for (let i = 0; i + 1 < utf16le.length; i += 2) {
-      [utf16le[i], utf16le[i + 1]] = [utf16le[i + 1], utf16le[i]];
-    }
-    text = utf16le.toString('utf16le');
+    text = decodeUtf16Be(buffer);
   } else {
     text = buffer.toString('utf8');
   }
