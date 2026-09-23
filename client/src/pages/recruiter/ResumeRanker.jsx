@@ -7,7 +7,7 @@ import DetailModal from './ranker/DetailModal';
 import { SAMPLE_CANDIDATES } from './ranker/sampleData';
 
 const API_BASE = 'http://localhost:5000/api';
-const MAX_RANKER_UPLOAD_MB = 25;
+const MAX_RANKER_UPLOAD_MB = 500;
 const MAX_RANKER_UPLOAD_BYTES = MAX_RANKER_UPLOAD_MB * 1024 * 1024;
  
 export default function ResumeRanker() {
@@ -166,7 +166,7 @@ export default function ResumeRanker() {
               </div>
               {candidateInputMode === 'file' ? (
                 <>
-                  <UploadZone label="Upload Candidates File" accept=".json,.jsonl" file={candidatesFile} onChange={(e) => handleFileChange(e.target.files[0], setCandidatesFile, 'Candidates file')} hint=".json or .jsonl · max 25 MB" />
+                  <UploadZone label="Upload Candidates File" accept=".json,.jsonl" file={candidatesFile} onChange={(e) => handleFileChange(e.target.files[0], setCandidatesFile, 'Candidates file')} hint=".json or .jsonl · max 500 MB" />
                   <p className="text-[11px] text-[var(--color-text-muted)] mt-2">Supports .jsonl (JSON Lines) or .json array of candidate objects.</p>
                 </>
               ) : (

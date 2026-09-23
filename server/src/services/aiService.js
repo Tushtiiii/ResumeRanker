@@ -30,13 +30,14 @@ const getGeminiApiKey = () => {
 
 if (provider === 'gemini') {
   const { ChatGoogleGenerativeAI } = require('@langchain/google-genai');
+  const geminiModel = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
   llm = new ChatGoogleGenerativeAI({
-    model          : 'gemini-3.6-flash',
+    model          : geminiModel,
     apiKey         : getGeminiApiKey(),
     temperature    : 0.3,
     maxOutputTokens: 8192,
   });
-  console.log('[aiService] LangChain → Gemini 3.6 Flash initialised.');
+  console.log(`[aiService] LangChain → Gemini (${geminiModel}) initialised.`);
 } else if (provider === 'openai') {
   // Fallback: OpenAI via LangChain
   const { ChatOpenAI } = require('@langchain/openai');
@@ -61,10 +62,46 @@ if (provider === 'gemini') {
 // ─── LangChain Output Parser ──────────────────────────────────────────────────
 const outputParser = new StringOutputParser();
 
+// ─── Fallback LLM Helper ──────────────────────────────────────────────────────
+let fallbackLlm = null;
+const getFallbackLlm = () => {
+  if (fallbackLlm) return fallbackLlm;
+  if (process.env.GROQ_API_KEY && !process.env.GROQ_API_KEY.startsWith('your_')) {
+    const { ChatOpenAI } = require('@langchain/openai');
+    fallbackLlm = new ChatOpenAI({
+      model       : process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+      apiKey      : process.env.GROQ_API_KEY,
+      configuration: { baseURL: 'https://api.groq.com/openai/v1' },
+      temperature : 0.3,
+    });
+    console.log('[aiService] Fallback LLM (Groq LLaMA) initialised.');
+  } else if (process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.startsWith('your_')) {
+    const { ChatOpenAI } = require('@langchain/openai');
+    fallbackLlm = new ChatOpenAI({
+      model      : 'gpt-4o-mini',
+      apiKey     : process.env.OPENAI_API_KEY,
+      temperature: 0.3,
+    });
+    console.log('[aiService] Fallback LLM (OpenAI GPT-4o-mini) initialised.');
+  }
+  return fallbackLlm;
+}; 
+
 // ─── Core: Generate Text via LangChain ───────────────────────────────────────
 const generateText = async (prompt) => {
-  const chain = RunnableSequence.from([llm, outputParser]);
-  return chain.invoke([new HumanMessage(prompt)]);
+  try {
+    const chain = RunnableSequence.from([llm, outputParser]);
+    return await chain.invoke([new HumanMessage(prompt)]);
+  } catch (err) {
+    const isRateLimit = err.status === 429 || (err.message && (err.message.includes('429') || err.message.includes('quota') || err.message.includes('Quota')));
+    const fallback = getFallbackLlm();
+    if (isRateLimit && fallback) {
+      console.warn('⚠️ Primary LLM rate limited (429). Falling back to backup provider...');
+      const fallbackChain = RunnableSequence.from([fallback, outputParser]);
+      return await fallbackChain.invoke([new HumanMessage(prompt)]);
+    }
+    throw err;
+  }
 };
 
 // ─── Embedding Clients ────────────────────────────────────────────────────────

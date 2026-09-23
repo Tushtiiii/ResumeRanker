@@ -1,4 +1,4 @@
-
+`
 # ============================================================================
 # Team identity
 # ============================================================================
@@ -83,5 +83,5 @@ declarations:
   read_submission_spec: true        # I have read submission_spec.md in full
   code_is_original_work: true       # My code is my team's original work (using AI as a tool is fine)
   no_collusion: true                # I have not coordinated my submission with other teams
-  honeypot_check_done: false        # OPTIONAL — set true if you explicitly checked for honeypots in your ranking
+  honeypot_check_done: true         # Set to true as honeypot & keyword-stuffing detectors are enabled in rank.py
   reproduction_tested: true         # I have tested that my reproduce_command runs end-to-end

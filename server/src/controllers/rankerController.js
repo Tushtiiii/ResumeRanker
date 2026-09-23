@@ -65,6 +65,48 @@ const decodeUtf16Be = (buffer) => {
   return utf16le.toString('utf16le');
 };
 
+// Reject known Office/PDF binaries early. Renaming .xlsx → .json is a common
+// upload mistake and should not reach JSON.parse.
+const looksLikeKnownBinary = (buffer) => {
+  if (buffer.length >= 4 && buffer.subarray(0, 4).equals(Buffer.from([0x50, 0x4b, 0x03, 0x04]))) {
+    return true; // ZIP / XLSX / DOCX
+  }
+  if (buffer.length >= 5 && buffer.subarray(0, 5).toString('ascii') === '%PDF-') {
+    return true;
+  }
+  if (buffer.length >= 4 && buffer.subarray(0, 4).equals(Buffer.from([0xd0, 0xcf, 0x11, 0xe0]))) {
+    return true; // OLE Compound Document (.doc / older Excel)
+  }
+  return false;
+};
+
+// C0 controls excluding tab / LF / CR (needed for JSONL and readable exports).
+// VT/FF and other C0 bytes show up in ATS paste-outs and break JSON.parse if kept.
+const CONTROL_CHARS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g;
+
+const looksLikeJsonText = (text) => {
+  const start = text.trimStart();
+  return start.startsWith('[') || start.startsWith('{');
+};
+
+const sanitizeCandidateText = (text) => {
+  // Trailing/embedded NULs show up when UTF-16 JSON is decoded as UTF-8, or
+  // when Windows tools null-terminate exports. Stripping them recovers valid
+  // ASCII/UTF-8 JSON without treating the upload as opaque binary.
+  let cleaned = text.replace(/\u0000/g, '');
+  const controls = cleaned.match(CONTROL_CHARS);
+  if (controls && controls.length > 0) {
+    const density = controls.length / Math.max(cleaned.length, 1);
+    // Sparse controls (form feeds, unit separators in resume fields) are common
+    // in ATS exports. Dense controls mean the buffer is still binary.
+    if (density > 0.02 && !looksLikeJsonText(cleaned)) {
+      return null;
+    }
+    cleaned = cleaned.replace(CONTROL_CHARS, ' ');
+  }
+  return cleaned.trim();
+};
+
 /**
  * Parse candidates from an uploaded file buffer.
  * Supports:
@@ -74,6 +116,12 @@ const decodeUtf16Be = (buffer) => {
 const decodeCandidateText = (buffer) => {
   if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
     throw new Error('Candidates file is empty.');
+  }
+
+  if (looksLikeKnownBinary(buffer)) {
+    throw new Error(
+      'Candidates file appears to contain binary data, not JSON text. Export it as a UTF-8 .json or .jsonl file and upload that exported file.'
+    );
   }
 
   // JSON is text. Handle the common Unicode encodings used by spreadsheet and
@@ -96,16 +144,27 @@ const decodeCandidateText = (buffer) => {
     text = buffer.toString('utf8');
   }
 
-  // A filename extension can be changed, so do not feed binary data into the
-  // JSON parser and return its misleading "Unexpected token" message.
-  const trimmed = text.trim();
-  if (!trimmed) throw new Error('Candidates file is empty.');
-  if (/[\u0000-\u0008\u000e-\u001f]/.test(trimmed)) {
+  let trimmed = sanitizeCandidateText(text);
+  if (trimmed == null) {
     throw new Error(
       'Candidates file appears to contain binary data, not JSON text. Export it as a UTF-8 .json or .jsonl file and upload that exported file.'
     );
   }
 
+  // If UTF-8 decode left a NUL-stripped but still-garbled buffer, retry UTF-16.
+  if (!looksLikeJsonText(trimmed) && buffer.length >= 8 && buffer.length % 2 === 0) {
+    const asUtf16Le = sanitizeCandidateText(buffer.toString('utf16le'));
+    if (asUtf16Le && looksLikeJsonText(asUtf16Le)) {
+      trimmed = asUtf16Le;
+    } else {
+      const asUtf16Be = sanitizeCandidateText(decodeUtf16Be(buffer));
+      if (asUtf16Be && looksLikeJsonText(asUtf16Be)) {
+        trimmed = asUtf16Be;
+      }
+    }
+  }
+
+  if (!trimmed) throw new Error('Candidates file is empty.');
   return trimmed;
 };
 
@@ -128,10 +187,24 @@ const parseCandidatesFromBuffer = (buffer, originalname) => {
 
   if (ext === '.json') {
     const parsed = JSON.parse(text);
-    // Support both array and { candidates: [...] } wrapper shapes
+    // Support both array and many common wrapper shapes
     if (Array.isArray(parsed)) return parsed;
     if (Array.isArray(parsed.candidates)) return parsed.candidates;
     if (Array.isArray(parsed.data)) return parsed.data;
+    if (Array.isArray(parsed.results)) return parsed.results;
+    if (Array.isArray(parsed.records)) return parsed.records;
+    if (Array.isArray(parsed.applicants)) return parsed.applicants;
+    if (Array.isArray(parsed.profiles)) return parsed.profiles;
+    if (Array.isArray(parsed.items)) return parsed.items;
+    // Last resort: look for the first array property in the object
+    if (typeof parsed === 'object' && parsed !== null) {
+      const arrKey = Object.keys(parsed).find((k) => Array.isArray(parsed[k]) && parsed[k].length > 0);
+      if (arrKey) return parsed[arrKey];
+    }
+    // Single candidate object (not wrapped in array)
+    if (typeof parsed === 'object' && parsed !== null && (parsed.name || parsed.Name || parsed.firstName || parsed.skills)) {
+      return [parsed];
+    }
     throw new Error('JSON file must contain an array of candidates (or { "candidates": [...] }).');
   }
 
@@ -186,24 +259,142 @@ const normalizeCandidateProfile = async (candidate) => {
     }
   }
 
-  // Already structured — normalize field names
+  // ── Resolve candidate name from many common formats ──────────────
+  const resolveName = (c) => {
+    // Direct name field (case-insensitive check)
+    if (c.name) return c.name;
+    if (c.Name) return c.Name;
+    if (c.NAME) return c.NAME;
+
+    // firstName + lastName combo
+    const first = c.firstName || c.first_name || c.FirstName || c.firstname || '';
+    const last = c.lastName || c.last_name || c.LastName || c.lastname || '';
+    if (first || last) return `${first} ${last}`.trim();
+
+    // Other common aliases
+    if (c.full_name) return c.full_name;
+    if (c.fullName) return c.fullName;
+    if (c.FullName) return c.FullName;
+    if (c.candidate_name) return c.candidate_name;
+    if (c.candidateName) return c.candidateName;
+    if (c.CandidateName) return c.CandidateName;
+    if (c.applicant_name) return c.applicant_name;
+    if (c.applicantName) return c.applicantName;
+    if (c.displayName) return c.displayName;
+    if (c.display_name) return c.display_name;
+
+    // Nested personal_info / personalInfo
+    const pi = c.personal_info || c.personalInfo || c.personal || {};
+    if (pi.name) return pi.name;
+    if (pi.full_name) return pi.full_name;
+    if (pi.fullName) return pi.fullName;
+    const piFirst = pi.firstName || pi.first_name || '';
+    const piLast = pi.lastName || pi.last_name || '';
+    if (piFirst || piLast) return `${piFirst} ${piLast}`.trim();
+
+    return 'Unknown';
+  };
+
+  // ── Resolve email from common formats ────────────────────────────
+  const resolveEmail = (c) => {
+    if (c.email) return c.email;
+    if (c.Email) return c.Email;
+    if (c.email_address) return c.email_address;
+    if (c.emailAddress) return c.emailAddress;
+    const pi = c.personal_info || c.personalInfo || c.personal || {};
+    return pi.email || pi.emailAddress || '';
+  };
+
+  // ── Resolve skills from common formats ───────────────────────────
+  const resolveSkills = (c) => {
+    // Direct fields
+    const raw = c.skills || c.Skills || c.SKILLS || c.technicalSkills || c.technical_skills
+      || c.TechnicalSkills || c.core_skills || c.coreSkills || c.competencies || c.Competencies
+      || c.technologies || c.Technologies || c.tech_stack || c.techStack || [];
+
+    // If it's a string (comma-separated), split it
+    if (typeof raw === 'string') return raw.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
+
+    // Nested personal_info
+    if (Array.isArray(raw) && raw.length > 0) return raw;
+
+    // Try nested resume / profile object
+    const nested = c.resume || c.profile || c.data || {};
+    const nestedSkills = nested.skills || nested.technicalSkills || nested.technical_skills || [];
+    if (typeof nestedSkills === 'string') return nestedSkills.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
+    return Array.isArray(nestedSkills) ? nestedSkills : [];
+  };
+
+  // ── Resolve experience from common formats ───────────────────────
+  const resolveExperience = (c) => {
+    return c.experience || c.Experience || c.workExperience || c.work_experience
+      || c.WorkExperience || c.employment || c.Employment || c.employmentHistory
+      || c.employment_history || c.jobs || c.positions || [];
+  };
+
+  // ── Resolve education from common formats ────────────────────────
+  const resolveEducation = (c) => {
+    return c.education || c.Education || c.educationHistory || c.education_history
+      || c.academics || c.qualifications || [];
+  };
+
+  // ── Resolve total experience years ───────────────────────────────
+  const resolveYears = (c) => {
+    return c.totalExperienceYears ?? c.total_experience_years ?? c.yearsOfExperience
+      ?? c.years_of_experience ?? c.experienceYears ?? c.experience_years
+      ?? c.totalExperience ?? c.total_experience ?? 0;
+  };
+
+  // ── Resolve headline ─────────────────────────────────────────────
+  const resolveHeadline = (c) => {
+    return c.headline || c.Headline || c.title || c.Title || c.designation
+      || c.Designation || c.current_title || c.currentTitle || c.jobTitle
+      || c.job_title || c.role || c.Role || c.position || c.Position || '';
+  };
+
+  // ── Resolve summary ──────────────────────────────────────────────
+  const resolveSummary = (c) => {
+    return c.summary || c.Summary || c.objective || c.Objective || c.about
+      || c.About || c.bio || c.Bio || c.profile_summary || c.profileSummary
+      || c.professional_summary || c.professionalSummary || c.description
+      || c.Description || '';
+  };
+
+  // ── Resolve projects ─────────────────────────────────────────────
+  const resolveProjects = (c) => {
+    return c.projects || c.Projects || c.portfolio || c.Portfolio || [];
+  };
+
+  // ── Resolve certifications ───────────────────────────────────────
+  const resolveCertifications = (c) => {
+    return c.certifications || c.Certifications || c.certificates || c.Certificates
+      || c.certs || c.Certs || [];
+  };
+
+  // Already structured — normalize field names with broad alias support
   return {
-    id: candidate.id || candidate._id || candidate.email || Math.random().toString(36).slice(2),
-    name: candidate.name || 'Unknown',
-    email: candidate.email || '',
-    phone: candidate.phone || '',
-    location: candidate.location || '',
-    headline: candidate.headline || candidate.title || '',
-    summary: candidate.summary || candidate.objective || '',
-    totalExperienceYears: candidate.totalExperienceYears ?? candidate.yearsOfExperience ?? 0,
-    skills: candidate.skills || candidate.technicalSkills || [],
-    topDomains: candidate.topDomains || candidate.domains || [],
-    experience: candidate.experience || candidate.workExperience || [],
-    education: candidate.education || [],
-    projects: candidate.projects || [],
-    certifications: candidate.certifications || [],
-    achievements: candidate.achievements || [],
-    languages: candidate.languages || [],
+    id: candidate.id || candidate._id || candidate.Id || candidate.ID
+      || candidate.candidateId || candidate.candidate_id || resolveEmail(candidate)
+      || Math.random().toString(36).slice(2),
+    name: resolveName(candidate),
+    email: resolveEmail(candidate),
+    phone: candidate.phone || candidate.Phone || candidate.mobile || candidate.Mobile
+      || candidate.phoneNumber || candidate.phone_number || '',
+    location: candidate.location || candidate.Location || candidate.city || candidate.City
+      || candidate.address || candidate.Address || '',
+    headline: resolveHeadline(candidate),
+    summary: resolveSummary(candidate),
+    totalExperienceYears: resolveYears(candidate),
+    skills: resolveSkills(candidate),
+    topDomains: candidate.topDomains || candidate.top_domains || candidate.domains
+      || candidate.Domains || candidate.expertise || candidate.specializations || [],
+    experience: resolveExperience(candidate),
+    education: resolveEducation(candidate),
+    projects: resolveProjects(candidate),
+    certifications: resolveCertifications(candidate),
+    achievements: candidate.achievements || candidate.Achievements || candidate.awards
+      || candidate.Awards || [],
+    languages: candidate.languages || candidate.Languages || [],
   };
 };
 
@@ -645,3 +836,45 @@ exports.analyzeCandidates = async (req, res) => {
     res.status(500).json({ error: 'Server error during analysis.' });
   }
 };
+
+/**
+ * POST /api/ranker/fast-rank
+ * Fast Python-accelerated ranking pipeline for processing large datasets (100k+ candidates)
+ */
+const { runPythonRanker } = require('../services/pythonRanker');
+const fs = require('fs');
+
+exports.fastRankCandidates = async (req, res) => {
+  try {
+    const candidatesFile = (req.files?.candidatesFile || [])[0] || req.file;
+    let candidatesPath = req.body.candidatesPath || path.join(__dirname, '../../../candidates.jsonl');
+    let tempUploadPath = null;
+
+    if (candidatesFile) {
+      tempUploadPath = path.join(__dirname, `../../../temp_upload_${Date.now()}.jsonl`);
+      fs.writeFileSync(tempUploadPath, candidatesFile.buffer);
+      candidatesPath = tempUploadPath;
+    }
+
+    const outputPath = path.join(__dirname, `../../../temp_ranked_${Date.now()}.csv`);
+    const startTime = Date.now();
+
+    const rankedResults = await runPythonRanker(candidatesPath, outputPath, 100);
+    const durationSec = (Date.now() - startTime) / 1000;
+
+    // Clean up temporary files
+    if (tempUploadPath && fs.existsSync(tempUploadPath)) fs.unlinkSync(tempUploadPath);
+    if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+
+    res.json({
+      success: true,
+      count: rankedResults.length,
+      executionTimeSeconds: durationSec,
+      candidates: rankedResults,
+    });
+  } catch (err) {
+    console.error('Fast rank error:', err);
+    res.status(500).json({ error: err.message || 'Fast ranking failed.' });
+  }
+};
+
