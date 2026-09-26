@@ -27,8 +27,8 @@ export default function DetailModal({ item, onClose }) {
           {/* Score Breakdown */}
           <div className="p-4 rounded-[var(--radius-md)] bg-[var(--color-surface-alt)] border border-[var(--color-border-light)]">
             <h4 className="font-heading font-bold text-sm mb-3 text-[var(--color-text-primary)]">📊 Match Breakdown</h4>
-            <ProgressBar label="Skills" value={scores.skillMatch} color="#7c3aed" />
-            <ProgressBar label="Experience" value={scores.experienceMatch} color="#06b6d4" />
+              <ProgressBar label="Skills" value={scores.skillMatch} color="#00487c" />
+              <ProgressBar label="Experience" value={scores.experienceMatch} color="#027bce" />
             <ProgressBar label="Projects" value={scores.projectRelevance} color="#10b981" />
             <ProgressBar label="Education" value={scores.educationMatch} color="#f59e0b" />
             <ProgressBar label="Certs" value={scores.certifications} color="#ec4899" />

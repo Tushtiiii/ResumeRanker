@@ -80,7 +80,7 @@ export default function CandidateComparison() {
                   return (
                     <th key={app._id} className="p-0 text-center min-w-[200px] bg-[var(--color-surface-alt)] border-b border-[var(--color-border)]">
                       <div className="py-4 px-2">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] mx-auto mb-2.5 flex items-center justify-center text-xl font-extrabold text-white">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00345a] to-[#4bb3fd] mx-auto mb-2.5 flex items-center justify-center text-xl font-extrabold text-white">
                           {c?.userId?.name?.[0] || '?'}
                         </div>
                         <div className="font-bold text-[var(--color-text-primary)] mb-1">{c?.userId?.name || 'Candidate'}</div>

@@ -7,7 +7,6 @@ const navItems = {
   recruiter: [
     { path: '/recruiter', icon: '📊', label: 'Dashboard' },
     { path: '/recruiter/jobs/new', icon: '➕', label: 'Post Job' },
-    { path: '/recruiter/resume-ranker', icon: '🏆', label: 'AI Ranker' },
     { path: '/recruiter/interview-questions', icon: '🎯', label: 'Interview Qs' },
     { path: '/recruiter/analytics', icon: '📈', label: 'Analytics' },
   ],
@@ -40,12 +39,12 @@ export default function AppLayout({ children }) {
       >
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 py-5 border-b border-[var(--color-border-light)]">
-          <div className="w-9 h-9 rounded-[10px] bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] flex items-center justify-center text-base shrink-0 shadow-md">
+          <div className="w-9 h-9 rounded-[10px] bg-[var(--color-accent)] flex items-center justify-center text-base shrink-0 shadow-md">
             🎯
           </div>
           {!collapsed && (
             <span className="font-heading font-bold text-lg text-[var(--color-text-primary)]">
-              TalentAI
+              GreenHire
             </span>
           )}
         </div>
@@ -81,7 +80,7 @@ export default function AppLayout({ children }) {
             {collapsed ? '→' : '← Collapse'}
           </button>
           <div className="mt-2 flex items-center gap-2.5 px-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] flex items-center justify-center text-xs font-bold text-white shrink-0">
+            <div className="w-8 h-8 rounded-full bg-[var(--color-accent)] flex items-center justify-center text-xs font-bold text-white shrink-0">
               {user?.name?.[0] || '?'}
             </div>
             {!collapsed && (

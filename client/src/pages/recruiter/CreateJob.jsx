@@ -100,7 +100,7 @@ export default function CreateJob() {
               {...getRootProps()}
               className={`border-2 border-dashed rounded-[var(--radius-lg)] py-8 px-5 text-center cursor-pointer transition-all ${
                 isDragActive
-                  ? 'border-[var(--color-accent)] bg-[rgba(124,58,237,0.04)]'
+                  ? 'border-[var(--color-accent)] bg-[rgba(0,72,124,0.04)]'
                   : 'border-[var(--color-border)] bg-[var(--color-surface-alt)]'
               }`}
             >
@@ -136,7 +136,7 @@ export default function CreateJob() {
                 {aiResult.experienceRange?.label && (
                   <div>
                     <div className="text-[var(--color-text-muted)] mb-1.5">Experience</div>
-                    <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-secondary-light)] border border-[rgba(6,182,212,0.25)] text-[var(--color-secondary)] text-xs font-medium">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[var(--color-secondary-light)] border border-[rgba(2,123,206,0.25)] text-[var(--color-secondary)] text-xs font-medium">
                       {aiResult.experienceRange.label}
                     </span>
                   </div>

@@ -132,7 +132,7 @@ export default function JobDetail() {
 
         {/* Compare Banner */}
         {selectedForCompare.length > 1 && (
-          <div className="flex items-center justify-between px-6 py-3.5 rounded-[var(--radius-md)] mb-4 bg-[var(--color-accent-light)] border border-[rgba(124,58,237,0.25)]">
+          <div className="flex items-center justify-between px-6 py-3.5 rounded-[var(--radius-md)] mb-4 bg-[var(--color-accent-light)] border border-[rgba(0,72,124,0.25)]">
             <span className="text-sm text-[var(--color-text-primary)]">
               {selectedForCompare.length} candidates selected for comparison
             </span>
@@ -195,7 +195,7 @@ export default function JobDetail() {
 
               return (
                 <div key={app._id} className={`card p-5 cursor-pointer transition-colors ${
-                  selectedForCompare.includes(c?._id) ? 'border-[rgba(124,58,237,0.5)]' : ''
+                  selectedForCompare.includes(c?._id) ? 'border-[rgba(0,72,124,0.5)]' : ''
                 }`}>
                   <div onClick={() => setSelectedApp(isExpanded ? null : app._id)}
                     className="flex items-center gap-4 flex-wrap">
@@ -222,13 +222,13 @@ export default function JobDetail() {
                     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                       <button onClick={() => toggleCompare(c?._id)} className={`py-1.5 px-3 rounded-[var(--radius-md)] text-xs border cursor-pointer transition-colors ${
                         selectedForCompare.includes(c?._id)
-                          ? 'bg-[var(--color-accent-light)] border-[rgba(124,58,237,0.3)] text-[var(--color-accent)]'
+                          ? 'bg-[var(--color-accent-light)] border-[rgba(0,72,124,0.3)] text-[var(--color-accent)]'
                           : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'
                       }`}>
                         {selectedForCompare.includes(c?._id) ? '✓ Compare' : 'Compare'}
                       </button>
                       {app.finalScore != null && (
-                        <button onClick={() => fetchInsights(id, c?._id, app._id)} className="py-1.5 px-3 rounded-[var(--radius-md)] text-xs bg-[var(--color-accent-light)] border border-[rgba(124,58,237,0.25)] text-[var(--color-accent)] cursor-pointer hover:border-[var(--color-accent)] transition-colors">
+                        <button onClick={() => fetchInsights(id, c?._id, app._id)} className="py-1.5 px-3 rounded-[var(--radius-md)] text-xs bg-[var(--color-accent-light)] border border-[rgba(0,72,124,0.25)] text-[var(--color-accent)] cursor-pointer hover:border-[var(--color-accent)] transition-colors">
                           {insightsLoading === app._id ? '⏳' : '💡 Insights'}
                         </button>
                       )}
@@ -279,7 +279,7 @@ export default function JobDetail() {
                         {insights && (
                           <div className="col-span-full">
                             <h4 className="font-heading font-bold mb-3.5 text-sm text-[var(--color-text-primary)]">🤖 AI Insights</h4>
-                            <div className="p-4 rounded-[var(--radius-md)] bg-[var(--color-accent-light)] border border-[rgba(124,58,237,0.15)] text-[13px] text-[var(--color-text-secondary)] leading-relaxed mb-3">
+                            <div className="p-4 rounded-[var(--radius-md)] bg-[var(--color-accent-light)] border border-[rgba(0,72,124,0.15)] text-[13px] text-[var(--color-text-secondary)] leading-relaxed mb-3">
                               {insights.summary}
                             </div>
                             <div className="grid grid-cols-2 gap-4">

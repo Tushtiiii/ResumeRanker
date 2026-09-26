@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 // ─── Sample data shown in preview ─────────────────────────────────────────────
 const PREVIEW_CANDIDATES = [
@@ -44,7 +43,6 @@ function MiniRing({ score }) {
 // ─── Widget ───────────────────────────────────────────────────────────────────
 export default function RankerPreviewWidget() {
   const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
 
   return (
     <>
@@ -159,7 +157,7 @@ export default function RankerPreviewWidget() {
           {/* CTA */}
           <div className="p-4 pt-0 flex gap-2">
             <button
-              onClick={() => { navigate('/resume-ranker'); setOpen(false); }}
+              onClick={() => { window.location.hash = 'ranker'; setOpen(false); }}
               className="flex-1 py-2.5 rounded-xl bg-accent hover:bg-accent-dark text-white text-xs font-bold shadow-md shadow-accent/20 hover:shadow-lg hover:shadow-accent/30 transition-all duration-200 text-center cursor-pointer"
             >
               Open Full Ranker →

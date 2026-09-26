@@ -31,7 +31,7 @@ export default function AuthCallback() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--color-base)]">
-      <div className="w-[52px] h-[52px] rounded-[14px] bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] flex items-center justify-center text-[26px] mb-6 animate-pulse shadow-lg">
+      <div className="w-[52px] h-[52px] rounded-[14px] bg-gradient-to-br from-[#00345a] to-[#4bb3fd] flex items-center justify-center text-[26px] mb-6 animate-pulse shadow-lg">
         🎯
       </div>
       <p className="text-[var(--color-text-secondary)]">

@@ -73,20 +73,20 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--color-base)] px-6 relative overflow-hidden">
       {/* Decorative blobs */}
-      <div className="absolute w-[500px] h-[500px] rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(124,58,237,0.07)_0%,transparent_70%)] top-[5%] right-[10%]" />
-      <div className="absolute w-[400px] h-[400px] rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(6,182,212,0.05)_0%,transparent_70%)] bottom-[10%] left-[5%]" />
+      <div className="absolute w-[500px] h-[500px] rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(75,179,253,0.08)_0%,transparent_70%)] top-[5%] right-[10%]" />
+      <div className="absolute w-[400px] h-[400px] rounded-full pointer-events-none bg-[radial-gradient(circle,rgba(0,72,124,0.06)_0%,transparent_70%)] bottom-[10%] left-[5%]" />
 
       <div className="w-full max-w-[460px] relative z-10">
         {/* Logo */}
         <div className="text-center mb-9">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00345a] to-[#4bb3fd] flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg">
             🎯
           </div>
           <h1 className="font-heading text-3xl font-bold mb-1.5 text-[var(--color-text-primary)]">
             Welcome back
           </h1>
           <p className="text-[var(--color-text-secondary)] text-base">
-            Sign in to your TalentAI account
+            Sign in to your GreenHire account
           </p>
         </div>
 
@@ -103,8 +103,8 @@ export default function LoginPage() {
                 disabled={demoLoading !== null}
                 className={`flex flex-col items-center gap-1 py-3 px-2.5 rounded-[var(--radius-md)] text-sm font-bold cursor-pointer transition-all border ${
                   role === 'recruiter'
-                    ? 'bg-[var(--color-accent-light)] border-[rgba(124,58,237,0.2)] text-[var(--color-accent)] hover:border-[var(--color-accent)]'
-                    : 'bg-[var(--color-secondary-light)] border-[rgba(6,182,212,0.2)] text-[var(--color-secondary)] hover:border-[var(--color-secondary)]'
+                    ? 'bg-[var(--color-accent-light)] border-[rgba(0,72,124,0.2)] text-[var(--color-accent)] hover:border-[var(--color-accent)]'
+                    : 'bg-[var(--color-secondary-light)] border-[rgba(2,123,206,0.25)] text-[var(--color-secondary)] hover:border-[var(--color-secondary)]'
                 } ${demoLoading && demoLoading !== role ? 'opacity-50' : ''} ${demoLoading ? 'cursor-not-allowed' : ''}`}
               >
                 {demoLoading === role ? (

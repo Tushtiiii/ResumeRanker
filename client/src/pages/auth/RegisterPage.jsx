@@ -19,7 +19,7 @@ export default function RegisterPage() {
     try {
       const { data } = await authAPI.register(form);
       dispatch(loginSuccess(data));
-      toast.success('Account created! Welcome to TalentAI 🎉');
+      toast.success('Account created! Welcome to GreenHire 🎉');
       if (data.user.role === 'recruiter') navigate('/recruiter');
       else navigate('/candidate');
     } catch (err) {
@@ -32,19 +32,19 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--color-base)] px-6 relative overflow-hidden">
       {/* Decorative blob */}
-      <div className="absolute w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(6,182,212,0.06)_0%,transparent_70%)] bottom-[5%] left-[5%] pointer-events-none" />
+      <div className="absolute w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(75,179,253,0.07)_0%,transparent_70%)] bottom-[5%] left-[5%] pointer-events-none" />
 
       <div className="w-full max-w-[460px] relative z-10">
         {/* Logo */}
         <div className="text-center mb-10">
-          <div className="w-[52px] h-[52px] rounded-[14px] bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] flex items-center justify-center text-[26px] mx-auto mb-4 shadow-lg">
+          <div className="w-[52px] h-[52px] rounded-[14px] bg-gradient-to-br from-[#00345a] to-[#4bb3fd] flex items-center justify-center text-[26px] mx-auto mb-4 shadow-lg">
             🎯
           </div>
           <h1 className="font-heading text-3xl font-bold mb-2 text-[var(--color-text-primary)]">
             Create your account
           </h1>
           <p className="text-[var(--color-text-secondary)] text-base">
-            Join TalentAI and transform hiring
+            Join GreenHire and transform hiring
           </p>
         </div>
 
@@ -56,7 +56,7 @@ export default function RegisterPage() {
               onClick={() => setForm({ ...form, role })}
               className={`flex-1 py-2.5 rounded-[10px] border-none cursor-pointer text-sm font-semibold capitalize transition-all ${
                 form.role === role
-                  ? 'bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] text-white shadow-md'
+                  ? 'bg-gradient-to-r from-[#00345a] to-[#4bb3fd] text-white shadow-md'
                   : 'bg-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
               }`}
             >

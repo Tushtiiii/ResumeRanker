@@ -10,7 +10,7 @@ const API_BASE = 'http://localhost:5000/api';
 const MAX_RANKER_UPLOAD_MB = 500;
 const MAX_RANKER_UPLOAD_BYTES = MAX_RANKER_UPLOAD_MB * 1024 * 1024;
  
-export default function ResumeRanker() {
+export default function ResumeRanker({ embedded = false }) {
   const { token, user } = useSelector((s) => s.auth);
   const isGuest = !token || !user;
   const navigate = useNavigate(); 
@@ -119,7 +119,7 @@ export default function ResumeRanker() {
       <div className="flex justify-between flex-wrap gap-4 mb-7">
         <div>
           <h1 className="font-heading text-[2rem] font-bold mb-1 text-[var(--color-text-primary)]">
-            <span className="bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] bg-clip-text text-transparent">AI Resume Ranker</span>
+            <span className="text-[var(--color-accent)]">AI Resume Ranker</span>
           </h1>
           <p className="text-[var(--color-text-secondary)] text-sm">Upload a JD + candidate list → get AI-powered rankings</p>
         </div>
@@ -128,7 +128,7 @@ export default function ResumeRanker() {
             {[
               { label: 'Analyzed', value: results.totalCandidates },
               { label: 'Strong Matches', value: results.rankedCandidates.filter((r) => r.scores.finalScore >= 75).length, color: '#10b981' },
-              { label: 'Top Score', value: results.rankedCandidates[0]?.scores.finalScore ?? '—', color: '#7c3aed' },
+              { label: 'Top Score', value: results.rankedCandidates[0]?.scores.finalScore ?? '—', color: '#00487c' },
             ].map(({ label, value, color }) => (
               <div key={label} className="text-center">
                 <div className="text-[1.5rem] font-extrabold font-heading" style={{ color: color || 'var(--color-text-primary)' }}>{value}</div>
@@ -189,7 +189,7 @@ export default function ResumeRanker() {
         <div className="card p-7 text-center mb-6">
           <div className="text-base font-semibold text-[var(--color-text-primary)] mb-3">{progress.stage}</div>
           <div className="h-2 rounded-full bg-[var(--color-border-light)] overflow-hidden mb-2">
-            <div className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] transition-all duration-500" style={{ width: `${progress.pct}%` }} />
+            <div className="h-full rounded-full bg-[var(--color-accent)] transition-all duration-500" style={{ width: `${progress.pct}%` }} />
           </div>
           <p className="text-[12px] text-[var(--color-text-muted)]">AI is semantically analyzing each candidate…</p>
         </div>
@@ -225,7 +225,7 @@ export default function ResumeRanker() {
             <span className="font-semibold text-sm text-[var(--color-text-primary)]">📋 {results.jobTitle}</span>
             {results.jdParsed?.seniorityLevel && <span className="tag">{results.jdParsed.seniorityLevel}</span>}
             {results.jdParsed?.experienceRange?.label && <span className="tag">⏱ {results.jdParsed.experienceRange.label}</span>}
-            {(results.jdParsed?.requiredSkills || []).slice(0, 5).map((s) => <span key={s} className="tag bg-[var(--color-accent-light)] text-[var(--color-accent)] border-[rgba(124,58,237,0.2)]">{s}</span>)}
+            {(results.jdParsed?.requiredSkills || []).slice(0, 5).map((s) => <span key={s} className="tag bg-[var(--color-accent-light)] text-[var(--color-accent)] border-[rgba(0,72,124,0.22)]">{s}</span>)}
           </div>
 
           {/* Candidate Cards */}
@@ -248,6 +248,10 @@ export default function ResumeRanker() {
       {selectedItem && <DetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />}
     </div>
   );
+
+  if (embedded) {
+    return content;
+  }
 
   if (isGuest) {
     return (

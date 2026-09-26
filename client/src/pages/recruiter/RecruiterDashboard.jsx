@@ -63,7 +63,7 @@ export default function RecruiterDashboard() {
           <h2 className="font-heading text-xl font-bold text-[var(--color-text-primary)]">Your Job Postings</h2>
           <button
             onClick={() => navigate('/recruiter/analytics')}
-            className="px-4 py-2 rounded-[var(--radius-md)] bg-[var(--color-secondary-light)] border border-[rgba(6,182,212,0.25)] text-[var(--color-secondary)] text-sm font-semibold cursor-pointer hover:border-[var(--color-secondary)] transition-colors"
+            className="px-4 py-2 rounded-[var(--radius-md)] bg-[var(--color-secondary-light)] border border-[rgba(2,123,206,0.25)] text-[var(--color-secondary)] text-sm font-semibold cursor-pointer hover:border-[var(--color-secondary)] transition-colors"
           >
             📈 View Analytics
           </button>

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 export const RECOMMENDATION_META = {
   'Highly Recommended': { color: '#10b981', bg: 'rgba(16,185,129,0.1)', icon: '⭐' },
-  Recommended:          { color: '#06b6d4', bg: 'rgba(6,182,212,0.1)',   icon: '✅' },
+  Recommended:          { color: '#027bce', bg: 'rgba(2,123,206,0.1)',   icon: '✅' },
   Consider:             { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  icon: '🤔' },
   'Not Recommended':    { color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   icon: '❌' },
 };
@@ -45,7 +45,7 @@ export function CandidateCard({ item, rank, onClick }) {
     : rank === 3 ? 'bg-gradient-to-br from-amber-600 to-amber-800 text-white'
     : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]';
   return (
-    <div className="card p-5 cursor-pointer hover:border-[rgba(124,58,237,0.3)] transition-colors" onClick={onClick}>
+    <div className="card p-5 cursor-pointer hover:border-[rgba(0,72,124,0.3)] transition-colors" onClick={onClick}>
       <div className="flex gap-4 flex-wrap">
         <div className="flex flex-col items-center gap-2 shrink-0">
           <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold ${rankCls}`}>#{rank}</span>
@@ -72,8 +72,8 @@ export function CandidateCard({ item, rank, onClick }) {
           </div>
         </div>
         <div className="w-[140px] shrink-0">
-          <ProgressBar label="Skills" value={scores.skillMatch} color="#7c3aed" />
-          <ProgressBar label="Exp" value={scores.experienceMatch} color="#06b6d4" />
+          <ProgressBar label="Skills" value={scores.skillMatch} color="#00487c" />
+          <ProgressBar label="Exp" value={scores.experienceMatch} color="#027bce" />
           <ProgressBar label="Projects" value={scores.projectRelevance} color="#10b981" />
           <ProgressBar label="Education" value={scores.educationMatch} color="#f59e0b" />
         </div>
@@ -89,7 +89,7 @@ export function UploadZone({ label, accept, file, onChange, hint }) {
   return (
     <div
       className={`border-2 border-dashed rounded-[var(--radius-lg)] py-7 px-5 text-center cursor-pointer transition-all ${
-        dragging ? 'border-[var(--color-accent)] bg-[rgba(124,58,237,0.04)]'
+        dragging ? 'border-[var(--color-accent)] bg-[rgba(0,72,124,0.04)]'
         : file ? 'border-emerald-300 bg-[rgba(16,185,129,0.03)]'
         : 'border-[var(--color-border)] bg-[var(--color-surface-alt)]'
       }`}
@@ -120,12 +120,12 @@ export function GuestNav() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-[1000] flex items-center justify-between py-3.5 px-10 bg-white/90 backdrop-blur-xl border-b border-[var(--color-border)]">
       <Link to="/" className="flex items-center gap-2.5 no-underline">
-        <div className="w-8 h-8 rounded-[9px] bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] flex items-center justify-center text-base">🎯</div>
-        <span className="font-heading text-lg font-bold text-[var(--color-text-primary)]">TalentAI</span>
+        <div className="w-8 h-8 rounded-[9px] bg-[var(--color-accent)] flex items-center justify-center text-base">🎯</div>
+        <span className="font-heading text-lg font-bold text-[var(--color-text-primary)]">GreenHire</span>
       </Link>
       <div className="flex gap-2.5">
         <Link to="/login" className="py-2 px-5 rounded-full border border-[var(--color-border)] text-[var(--color-text-primary)] no-underline text-[13px] font-medium hover:border-[var(--color-accent)] transition-colors">Log In</Link>
-        <Link to="/register" className="py-2 px-5 rounded-full bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] text-white no-underline text-[13px] font-semibold">Sign Up Free</Link>
+        <Link to="/register" className="py-2 px-5 rounded-full bg-[var(--color-accent)] text-white no-underline text-[13px] font-semibold">Sign Up Free</Link>
       </div>
     </nav>
   );
@@ -133,17 +133,17 @@ export function GuestNav() {
 
 export function LoginSaveBanner({ onDismiss }) {
   return (
-    <div className="flex items-center justify-between py-3 px-6 rounded-[var(--radius-md)] mb-6 gap-4 flex-wrap bg-[var(--color-accent-light)] border border-[rgba(124,58,237,0.2)]">
+    <div className="flex items-center justify-between py-3 px-6 rounded-[var(--radius-md)] mb-6 gap-4 flex-wrap bg-[var(--color-accent-light)] border border-[rgba(0,72,124,0.2)]">
       <div className="flex items-center gap-2.5">
         <span className="text-xl">💾</span>
         <div>
-          <span className="font-semibold text-sm text-[var(--color-text-primary)]">You're using TalentAI as a guest.</span>
+          <span className="font-semibold text-sm text-[var(--color-text-primary)]">You're using GreenHire as a guest.</span>
           <span className="text-[var(--color-text-secondary)] text-[13px] ml-1.5">Results won't be saved.</span>
         </div>
       </div>
       <div className="flex gap-2 shrink-0">
-        <Link to="/login" className="py-1.5 px-4 rounded-full border border-[rgba(124,58,237,0.4)] text-[var(--color-accent)] no-underline text-[13px] font-semibold">Log In</Link>
-        <Link to="/register" className="py-1.5 px-4 rounded-full bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] text-white no-underline text-[13px] font-bold">Create Free Account</Link>
+        <Link to="/login" className="py-1.5 px-4 rounded-full border border-[rgba(0,72,124,0.4)] text-[var(--color-accent)] no-underline text-[13px] font-semibold">Log In</Link>
+        <Link to="/register" className="py-1.5 px-4 rounded-full bg-[var(--color-accent)] text-white no-underline text-[13px] font-bold">Create Free Account</Link>
         <button onClick={onDismiss} className="bg-transparent border-none text-[var(--color-text-muted)] cursor-pointer text-base p-0">✕</button>
       </div>
     </div>
@@ -158,7 +158,7 @@ export function GuestResultAlert({ onDismiss }) {
         <p className="font-bold text-[15px] text-[var(--color-text-primary)] mb-1">Analysis complete! Create a free account to save these results.</p>
         <p className="text-[13px] text-[var(--color-text-secondary)] leading-relaxed">Your ranked candidates won't be stored as a guest. Sign up free to save analyses.</p>
         <div className="flex gap-2 mt-2.5">
-          <Link to="/register" className="py-2 px-5 rounded-full bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] text-white no-underline text-[13px] font-bold">Create Free Account →</Link>
+          <Link to="/register" className="py-2 px-5 rounded-full bg-[var(--color-accent)] text-white no-underline text-[13px] font-bold">Create Free Account →</Link>
           <Link to="/login" className="py-2 px-5 rounded-full border border-[var(--color-border)] text-[var(--color-text-secondary)] no-underline text-[13px]">Log In</Link>
         </div>
       </div>

@@ -5,10 +5,10 @@ import { candidateAPI, jobsAPI } from '../../api';
 import AppLayout from '../../components/layout/AppLayout';
 
 const statusStyle = {
-  applied: 'bg-[rgba(6,182,212,0.08)] text-[var(--color-secondary)] border-[rgba(6,182,212,0.25)]',
+  applied: 'bg-[rgba(75,179,253,0.08)] text-[var(--color-secondary)] border-[rgba(75,179,253,0.25)]',
   shortlisted: 'bg-[rgba(16,185,129,0.08)] text-[var(--color-success)] border-[rgba(16,185,129,0.25)]',
   rejected: 'bg-[rgba(239,68,68,0.08)] text-[var(--color-danger)] border-[rgba(239,68,68,0.25)]',
-  hired: 'bg-[rgba(124,58,237,0.08)] text-[var(--color-accent)] border-[rgba(124,58,237,0.25)]',
+  hired: 'bg-[rgba(0,72,124,0.08)] text-[var(--color-accent)] border-[rgba(0,72,124,0.25)]',
 };
 
 export default function CandidateDashboard() {
@@ -89,7 +89,7 @@ export default function CandidateDashboard() {
               ) : (
                 <>
                   <div className="flex items-start gap-4 mb-5">
-                    <div className="w-14 h-14 shrink-0 rounded-[var(--radius-lg)] bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] flex items-center justify-center text-2xl font-extrabold text-white">
+                    <div className="w-14 h-14 shrink-0 rounded-[var(--radius-lg)] bg-gradient-to-br from-[#00345a] to-[#4bb3fd] flex items-center justify-center text-2xl font-extrabold text-white">
                       {profile?.userId?.name?.[0] || '?'}
                     </div>
                     <div className="flex-1 min-w-0">

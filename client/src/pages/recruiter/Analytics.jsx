@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { aiAPI } from '../../api';
 import AppLayout from '../../components/layout/AppLayout';
 
-const COLORS = ['#7c3aed', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+const COLORS = ['#00487c', '#027bce', '#10b981', '#f59e0b', '#ef4444', '#3e6680'];
 
 const tooltipStyle = {
   background: '#ffffff',
@@ -63,7 +63,7 @@ export default function AnalyticsDashboard() {
                       <Bar dataKey="count" fill="url(#purpleGrad)" radius={[4, 4, 0, 0]} />
                       <defs>
                         <linearGradient id="purpleGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#7c3aed" />
+                          <stop offset="0%" stopColor="#00487c" />
                           <stop offset="100%" stopColor="#4f46e5" />
                         </linearGradient>
                       </defs>
@@ -107,7 +107,7 @@ export default function AnalyticsDashboard() {
                       <XAxis dataKey="date" tick={{ fill: '#5b5675', fontSize: 11 }} />
                       <YAxis tick={{ fill: '#5b5675', fontSize: 11 }} />
                       <Tooltip contentStyle={tooltipStyle} />
-                      <Line type="monotone" dataKey="count" stroke="#06b6d4" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="count" stroke="#027bce" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
