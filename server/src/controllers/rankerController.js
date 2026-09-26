@@ -271,6 +271,13 @@ const normalizeCandidateProfile = async (candidate) => {
     const last = c.lastName || c.last_name || c.LastName || c.lastname || '';
     if (first || last) return `${first} ${last}`.trim();
 
+    // Nested profile object (e.g., sample_candidates.json)
+    const prof = c.profile || {};
+    if (prof.anonymized_name) return prof.anonymized_name;
+    if (prof.name) return prof.name;
+    if (prof.fullName) return prof.fullName;
+    if (prof.full_name) return prof.full_name;
+
     // Other common aliases
     if (c.full_name) return c.full_name;
     if (c.fullName) return c.fullName;
@@ -282,6 +289,7 @@ const normalizeCandidateProfile = async (candidate) => {
     if (c.applicantName) return c.applicantName;
     if (c.displayName) return c.displayName;
     if (c.display_name) return c.display_name;
+    if (c.anonymized_name) return c.anonymized_name;
 
     // Nested personal_info / personalInfo
     const pi = c.personal_info || c.personalInfo || c.personal || {};
@@ -292,6 +300,11 @@ const normalizeCandidateProfile = async (candidate) => {
     const piLast = pi.lastName || pi.last_name || '';
     if (piFirst || piLast) return `${piFirst} ${piLast}`.trim();
 
+    // Fall back to candidate ID if available before "Unknown"
+    if (c.candidate_id) return c.candidate_id;
+    if (c.candidateId) return c.candidateId;
+    if (c.id) return String(c.id);
+
     return 'Unknown';
   };
 
@@ -301,6 +314,9 @@ const normalizeCandidateProfile = async (candidate) => {
     if (c.Email) return c.Email;
     if (c.email_address) return c.email_address;
     if (c.emailAddress) return c.emailAddress;
+    const prof = c.profile || {};
+    if (prof.email) return prof.email;
+    if (prof.email_address) return prof.email_address;
     const pi = c.personal_info || c.personalInfo || c.personal || {};
     return pi.email || pi.emailAddress || '';
   };
@@ -312,63 +328,136 @@ const normalizeCandidateProfile = async (candidate) => {
       || c.TechnicalSkills || c.core_skills || c.coreSkills || c.competencies || c.Competencies
       || c.technologies || c.Technologies || c.tech_stack || c.techStack || [];
 
+    // Helper to unwrap skill objects { name: "Python", ... } or plain strings
+    const unwrapSkills = (arr) => {
+      if (!Array.isArray(arr)) return [];
+      return arr.map((item) => {
+        if (!item) return '';
+        if (typeof item === 'string') return item.trim();
+        if (typeof item === 'object') {
+          return (item.name || item.skill || item.title || item.label || '').trim();
+        }
+        return String(item).trim();
+      }).filter(Boolean);
+    };
+
     // If it's a string (comma-separated), split it
     if (typeof raw === 'string') return raw.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
 
-    // Nested personal_info
-    if (Array.isArray(raw) && raw.length > 0) return raw;
+    if (Array.isArray(raw) && raw.length > 0) return unwrapSkills(raw);
 
     // Try nested resume / profile object
     const nested = c.resume || c.profile || c.data || {};
     const nestedSkills = nested.skills || nested.technicalSkills || nested.technical_skills || [];
     if (typeof nestedSkills === 'string') return nestedSkills.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
-    return Array.isArray(nestedSkills) ? nestedSkills : [];
+    return unwrapSkills(nestedSkills);
   };
 
   // ── Resolve experience from common formats ───────────────────────
   const resolveExperience = (c) => {
-    return c.experience || c.Experience || c.workExperience || c.work_experience
-      || c.WorkExperience || c.employment || c.Employment || c.employmentHistory
-      || c.employment_history || c.jobs || c.positions || [];
+    const raw = c.experience || c.Experience || c.workExperience || c.work_experience
+      || c.WorkExperience || c.career_history || c.careerHistory || c.CareerHistory
+      || c.employment || c.Employment || c.employmentHistory
+      || c.employment_history || c.jobs || c.positions
+      || c.profile?.experience || c.profile?.career_history || [];
+    if (!Array.isArray(raw)) return [];
+    return raw.map((exp) => ({
+      ...exp,
+      title: exp.title || exp.role || exp.position || exp.designation || '',
+      company: exp.company || exp.employer || exp.organization || '',
+      durationMonths: exp.duration_months || exp.durationMonths || 0,
+      description: exp.description || exp.summary || '',
+    }));
   };
 
   // ── Resolve education from common formats ────────────────────────
   const resolveEducation = (c) => {
-    return c.education || c.Education || c.educationHistory || c.education_history
-      || c.academics || c.qualifications || [];
+    const raw = c.education || c.Education || c.educationHistory || c.education_history
+      || c.academics || c.qualifications || c.profile?.education || [];
+    if (!Array.isArray(raw)) return [];
+    return raw.map((e) => ({
+      ...e,
+      degree: e.degree || e.qualification || '',
+      field: e.field || e.field_of_study || e.fieldOfStudy || e.major || e.branch || '',
+      institution: e.institution || e.university || e.college || e.school || '',
+    }));
   };
 
   // ── Resolve total experience years ───────────────────────────────
   const resolveYears = (c) => {
-    return c.totalExperienceYears ?? c.total_experience_years ?? c.yearsOfExperience
+    const prof = c.profile || {};
+    const val = c.totalExperienceYears ?? c.total_experience_years ?? c.yearsOfExperience
       ?? c.years_of_experience ?? c.experienceYears ?? c.experience_years
-      ?? c.totalExperience ?? c.total_experience ?? 0;
+      ?? c.totalExperience ?? c.total_experience
+      ?? prof.years_of_experience ?? prof.yearsOfExperience
+      ?? prof.total_experience_years ?? prof.totalExperienceYears;
+    if (val !== undefined && val !== null && !isNaN(Number(val))) {
+      return Number(val);
+    }
+    // Calculate from career_history if available
+    const history = resolveExperience(c);
+    if (Array.isArray(history) && history.length > 0) {
+      const totalMonths = history.reduce((sum, h) => sum + (Number(h.durationMonths || h.duration_months) || 0), 0);
+      if (totalMonths > 0) return parseFloat((totalMonths / 12).toFixed(1));
+    }
+    return 0;
   };
 
   // ── Resolve headline ─────────────────────────────────────────────
   const resolveHeadline = (c) => {
+    const prof = c.profile || {};
     return c.headline || c.Headline || c.title || c.Title || c.designation
       || c.Designation || c.current_title || c.currentTitle || c.jobTitle
-      || c.job_title || c.role || c.Role || c.position || c.Position || '';
+      || c.job_title || c.role || c.Role || c.position || c.Position
+      || prof.headline || prof.current_title || prof.title || '';
   };
 
   // ── Resolve summary ──────────────────────────────────────────────
   const resolveSummary = (c) => {
+    const prof = c.profile || {};
     return c.summary || c.Summary || c.objective || c.Objective || c.about
       || c.About || c.bio || c.Bio || c.profile_summary || c.profileSummary
       || c.professional_summary || c.professionalSummary || c.description
-      || c.Description || '';
+      || c.Description || prof.summary || prof.bio || '';
+  };
+
+  // ── Resolve location ─────────────────────────────────────────────
+  const resolveLocation = (c) => {
+    if (c.location || c.Location || c.city || c.City || c.address || c.Address) {
+      return c.location || c.Location || c.city || c.City || c.address || c.Address;
+    }
+    const prof = c.profile || {};
+    if (prof.location && prof.country) return `${prof.location}, ${prof.country}`;
+    return prof.location || prof.country || '';
   };
 
   // ── Resolve projects ─────────────────────────────────────────────
   const resolveProjects = (c) => {
-    return c.projects || c.Projects || c.portfolio || c.Portfolio || [];
+    const raw = c.projects || c.Projects || c.portfolio || c.Portfolio || c.profile?.projects || [];
+    if (!Array.isArray(raw)) return [];
+    return raw.map((p) => {
+      if (typeof p === 'string') return { name: p, technologies: [] };
+      return {
+        name: p.name || p.title || '',
+        description: p.description || '',
+        technologies: Array.isArray(p.technologies) ? p.technologies : (p.tech_stack || []),
+      };
+    });
   };
 
   // ── Resolve certifications ───────────────────────────────────────
   const resolveCertifications = (c) => {
-    return c.certifications || c.Certifications || c.certificates || c.Certificates
-      || c.certs || c.Certs || [];
+    const raw = c.certifications || c.Certifications || c.certificates || c.Certificates
+      || c.certs || c.Certs || c.profile?.certifications || [];
+    if (!Array.isArray(raw)) return [];
+    return raw.map((cert) => {
+      if (typeof cert === 'string') return { name: cert };
+      return {
+        name: cert.name || cert.title || cert.certificate || '',
+        issuer: cert.issuer || cert.organization || cert.authority || '',
+        year: cert.year || cert.date || '',
+      };
+    });
   };
 
   // Already structured — normalize field names with broad alias support
@@ -380,8 +469,7 @@ const normalizeCandidateProfile = async (candidate) => {
     email: resolveEmail(candidate),
     phone: candidate.phone || candidate.Phone || candidate.mobile || candidate.Mobile
       || candidate.phoneNumber || candidate.phone_number || '',
-    location: candidate.location || candidate.Location || candidate.city || candidate.City
-      || candidate.address || candidate.Address || '',
+    location: resolveLocation(candidate),
     headline: resolveHeadline(candidate),
     summary: resolveSummary(candidate),
     totalExperienceYears: resolveYears(candidate),
