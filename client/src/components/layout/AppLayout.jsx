@@ -6,8 +6,10 @@ import { logout } from '../../store/slices/authSlice';
 const navItems = {
   recruiter: [
     { path: '/recruiter', icon: '📊', label: 'Dashboard' },
+    { path: '/recruiter/ranker', icon: '🤖', label: 'AI Ranker' },
     { path: '/recruiter/jobs/new', icon: '➕', label: 'Post Job' },
     { path: '/recruiter/interview-questions', icon: '🎯', label: 'Interview Qs' },
+    { path: '/recruiter/compare', icon: '⚖️', label: 'Compare' },
     { path: '/recruiter/analytics', icon: '📈', label: 'Analytics' },
   ],
   candidate: [

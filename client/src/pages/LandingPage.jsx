@@ -29,7 +29,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3.5">
           <Link to="/" className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-[10px] bg-[var(--color-accent)] flex items-center justify-center text-base shadow-md">
-              ✅
+              📈
             </div>
             <span className="font-heading font-bold text-xl text-[var(--color-text-primary)]">
               ResumeRanker

@@ -1,19 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import AppLayout from '../../components/layout/AppLayout';
 import { CandidateCard, UploadZone, GuestNav, LoginSaveBanner, GuestResultAlert } from './ranker/RankerComponents';
 import DetailModal from './ranker/DetailModal';
 import { SAMPLE_CANDIDATES } from './ranker/sampleData';
+import { jobsAPI } from '../../api';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = '/api';
 const MAX_RANKER_UPLOAD_MB = 500;
 const MAX_RANKER_UPLOAD_BYTES = MAX_RANKER_UPLOAD_MB * 1024 * 1024;
- 
+
 export default function ResumeRanker({ embedded = false }) {
   const { token, user } = useSelector((s) => s.auth);
   const isGuest = !token || !user;
-  const navigate = useNavigate(); 
+  const isRecruiter = user?.role === 'recruiter' || user?.role === 'admin';
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preselectedJobId = searchParams.get('jobId');
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [showResultAlert, setShowResultAlert] = useState(false);
@@ -30,90 +35,234 @@ export default function ResumeRanker({ embedded = false }) {
   const [minScore, setMinScore] = useState(0);
   const [sortOrder, setSortOrder] = useState('desc');
 
+  // ── Existing Job Selector (recruiter only) ──
+  const [jdSource, setJdSource] = useState(preselectedJobId ? 'existing' : 'upload');
+  const [selectedJobId, setSelectedJobId] = useState(preselectedJobId || '');
+
+  // Fetch recruiter's jobs for the dropdown
+  const { data: jobsData } = useQuery({
+    queryKey: ['recruiter-jobs-for-ranker'],
+    queryFn: () => jobsAPI.getAll({ limit: 100 }).then((r) => r.data),
+    enabled: isRecruiter && !embedded,
+  });
+  const recruiterJobs = jobsData?.jobs || [];
+
+  // If a jobId was passed via URL, auto-select "existing" mode
+  useEffect(() => {
+    if (preselectedJobId) {
+      setJdSource('existing');
+      setSelectedJobId(preselectedJobId);
+    }
+  }, [preselectedJobId]);
+
+  // ── Compare selection ──
+  const [selectedForCompare, setSelectedForCompare] = useState([]);
+
+  const toggleCompare = (item) => {
+    setSelectedForCompare((prev) => {
+      const exists = prev.find(
+        (p) => (p.candidate.id || p.candidate.email) === (item.candidate.id || item.candidate.email)
+      );
+      if (exists) return prev.filter((p) => p !== exists);
+      if (prev.length >= 3) return prev; // max 3
+      return [...prev, item];
+    });
+  };
+
+  const isSelected = (item) =>
+    selectedForCompare.some(
+      (p) => (p.candidate.id || p.candidate.email) === (item.candidate.id || item.candidate.email)
+    );
+
   const handleFileChange = (file, setFile, label) => {
     if (file && file.size > MAX_RANKER_UPLOAD_BYTES) {
       setFile(null);
       setError(`${label} must be ${MAX_RANKER_UPLOAD_MB} MB or smaller.`);
       return;
     }
-
     setFile(file || null);
     setError('');
   };
 
-  const loadSample = () => { setCandidateInputMode('text'); setCandidatesText(JSON.stringify(SAMPLE_CANDIDATES, null, 2)); };
+  const loadSample = () => {
+    setCandidateInputMode('text');
+    setCandidatesText(JSON.stringify(SAMPLE_CANDIDATES, null, 2));
+  };
 
   const downloadJSON = () => {
     if (!results) return;
     const output = {
-      meta: { generatedAt: new Date().toISOString(), jobTitle: results.jobTitle, totalCandidates: results.totalCandidates },
+      meta: {
+        generatedAt: new Date().toISOString(),
+        jobTitle: results.jobTitle,
+        totalCandidates: results.totalCandidates,
+      },
       jobDescription: results.jdParsed,
       rankedCandidates: results.rankedCandidates.map(({ rank, candidate, scores, insights }) => ({
-        rank, name: candidate.name, email: candidate.email || '', overallScore: scores.finalScore,
-        recommendation: insights.recommendation, scoreBreakdown: scores, aiSummary: insights.summary,
-        strengths: insights.strengths, concerns: insights.concerns,
-        matchedSkills: insights.matchedSkills, missingSkills: insights.missingSkills,
+        rank,
+        name: candidate.name,
+        email: candidate.email || '',
+        overallScore: scores.finalScore,
+        recommendation: insights.recommendation,
+        scoreBreakdown: scores,
+        aiSummary: insights.summary,
+        strengths: insights.strengths,
+        concerns: insights.concerns,
+        matchedSkills: insights.matchedSkills,
+        missingSkills: insights.missingSkills,
         recommendationReason: insights.recommendationReason,
       })),
     };
     const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `ranked_candidates_${Date.now()}.json`; a.click();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ranked_candidates_${Date.now()}.json`;
+    a.click();
     URL.revokeObjectURL(url);
   };
 
   const downloadCSV = () => {
     if (!results) return;
-    const headers = ['Rank','Name','Email','Score','Recommendation','SkillMatch','ExperienceMatch','ProjectRelevance','EducationMatch','Certifications','MatchedSkills','MissingSkills'];
+    const headers = [
+      'Rank',
+      'Name',
+      'Email',
+      'Score',
+      'Recommendation',
+      'SkillMatch',
+      'ExperienceMatch',
+      'ProjectRelevance',
+      'EducationMatch',
+      'Certifications',
+      'MatchedSkills',
+      'MissingSkills',
+    ];
     const rows = results.rankedCandidates.map(({ rank, candidate, scores, insights }) => [
-      rank, candidate.name, candidate.email || '', scores.finalScore, insights.recommendation,
-      scores.skillMatch, scores.experienceMatch, scores.projectRelevance, scores.educationMatch, scores.certifications,
-      (insights.matchedSkills || []).join('; '), (insights.missingSkills || []).join('; '),
+      rank,
+      candidate.name,
+      candidate.email || '',
+      scores.finalScore,
+      insights.recommendation,
+      scores.skillMatch,
+      scores.experienceMatch,
+      scores.projectRelevance,
+      scores.educationMatch,
+      scores.certifications,
+      (insights.matchedSkills || []).join('; '),
+      (insights.missingSkills || []).join('; '),
     ]);
-    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const csv = [headers, ...rows]
+      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `ranked_candidates_${Date.now()}.csv`; a.click();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ranked_candidates_${Date.now()}.csv`;
+    a.click();
     URL.revokeObjectURL(url);
   };
 
   const handleAnalyze = async () => {
     setError('');
-    if (!jdFile) return setError('Please upload a Job Description file.');
+
+    // Validate JD source
+    if (jdSource === 'upload') {
+      if (!jdFile) return setError('Please upload a Job Description file.');
+    } else {
+      if (!selectedJobId) return setError('Please select a job from the dropdown.');
+    }
+
+    // Validate candidates
     if (candidateInputMode === 'file') {
       if (!candidatesFile) return setError('Please upload a candidates .json or .jsonl file.');
     } else {
-      try { const p = JSON.parse(candidatesText); if (!Array.isArray(p) || !p.length) throw 0; if (p.length > 50) return setError('Maximum 50 candidates.'); }
-      catch { return setError('Candidates must be a valid non-empty JSON array.'); }
+      try {
+        const p = JSON.parse(candidatesText);
+        if (!Array.isArray(p) || !p.length) throw 0;
+        if (p.length > 50) return setError('Maximum 50 candidates.');
+      } catch {
+        return setError('Candidates must be a valid non-empty JSON array.');
+      }
     }
-    setIsAnalyzing(true); setResults(null);
+
+    setIsAnalyzing(true);
+    setResults(null);
     const stages = [
-      { stage: '📄 Parsing job description…', pct: 10 }, { stage: '🧠 Generating embeddings…', pct: 30 },
-      { stage: '🔍 Analyzing profiles…', pct: 60 }, { stage: '✨ Generating insights…', pct: 85 }, { stage: '🏆 Ranking…', pct: 95 },
+      { stage: '📄 Parsing job description…', pct: 10 },
+      { stage: '🧠 Generating embeddings…', pct: 30 },
+      { stage: '🔍 Analyzing profiles…', pct: 60 },
+      { stage: '✨ Generating insights…', pct: 85 },
+      { stage: '🏆 Ranking…', pct: 95 },
     ];
     let si = 0;
-    const tick = setInterval(() => { if (si < stages.length) { setProgress(stages[si]); si++; } }, 800);
+    const tick = setInterval(() => {
+      if (si < stages.length) {
+        setProgress(stages[si]);
+        si++;
+      }
+    }, 800);
+
     try {
-      const form = new FormData(); form.append('jdFile', jdFile);
+      const form = new FormData();
+
+      if (jdSource === 'upload') {
+        form.append('jdFile', jdFile);
+      } else {
+        // Pass the jobId so the backend resolves the JD from the database
+        form.append('jobId', selectedJobId);
+      }
+
       if (candidateInputMode === 'file') form.append('candidatesFile', candidatesFile);
       else form.append('candidates', candidatesText);
-      const res = await fetch(`${API_BASE}/ranker/analyze`, { method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: form });
-      const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Analysis failed.');
-      setResults(data); setProgress({ stage: '✅ Complete!', pct: 100 }); if (isGuest) setShowResultAlert(true);
-    } catch (err) { setError(err.message || 'Analysis failed.'); }
-    finally { clearInterval(tick); setIsAnalyzing(false); }
+
+      const res = await fetch(`${API_BASE}/ranker/analyze`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Analysis failed.');
+      setResults(data);
+      setProgress({ stage: '✅ Complete!', pct: 100 });
+      if (isGuest) setShowResultAlert(true);
+    } catch (err) {
+      setError(err.message || 'Analysis failed.');
+    } finally {
+      clearInterval(tick);
+      setIsAnalyzing(false);
+    }
   };
 
   const displayed = results
     ? [...results.rankedCandidates]
-        .filter((item) => { if (item.scores.finalScore < minScore) return false; if (!search) return true; const q = search.toLowerCase(); return (item.candidate.name||'').toLowerCase().includes(q) || (item.candidate.skills||[]).join(' ').toLowerCase().includes(q); })
-        .sort((a, b) => sortOrder === 'desc' ? b.scores.finalScore - a.scores.finalScore : a.scores.finalScore - b.scores.finalScore)
+        .filter((item) => {
+          if (item.scores.finalScore < minScore) return false;
+          if (!search) return true;
+          const q = search.toLowerCase();
+          return (
+            (item.candidate.name || '').toLowerCase().includes(q) ||
+            (item.candidate.skills || []).join(' ').toLowerCase().includes(q)
+          );
+        })
+        .sort((a, b) =>
+          sortOrder === 'desc'
+            ? b.scores.finalScore - a.scores.finalScore
+            : a.scores.finalScore - b.scores.finalScore
+        )
     : [];
+
+  const selectedJob = recruiterJobs.find((j) => j._id === selectedJobId);
 
   const content = (
     <div className="max-w-[1000px] mx-auto">
-      {isGuest && !bannerDismissed && <LoginSaveBanner onDismiss={() => setBannerDismissed(true)} />}
-      {isGuest && showResultAlert && <GuestResultAlert onDismiss={() => setShowResultAlert(false)} />}
+      {isGuest && !bannerDismissed && (
+        <LoginSaveBanner onDismiss={() => setBannerDismissed(true)} />
+      )}
+      {isGuest && showResultAlert && (
+        <GuestResultAlert onDismiss={() => setShowResultAlert(false)} />
+      )}
 
       {/* Header */}
       <div className="flex justify-between flex-wrap gap-4 mb-7">
@@ -121,17 +270,32 @@ export default function ResumeRanker({ embedded = false }) {
           <h1 className="font-heading text-[2rem] font-bold mb-1 text-[var(--color-text-primary)]">
             <span className="text-[var(--color-accent)]">AI Resume Ranker</span>
           </h1>
-          <p className="text-[var(--color-text-secondary)] text-sm">Upload a JD + candidate list → get AI-powered rankings</p>
+          <p className="text-[var(--color-text-secondary)] text-sm">
+            Upload a JD + candidate list → get AI-powered rankings
+          </p>
         </div>
         {results && (
           <div className="flex gap-4">
             {[
               { label: 'Analyzed', value: results.totalCandidates },
-              { label: 'Strong Matches', value: results.rankedCandidates.filter((r) => r.scores.finalScore >= 75).length, color: '#10b981' },
-              { label: 'Top Score', value: results.rankedCandidates[0]?.scores.finalScore ?? '—', color: '#00487c' },
+              {
+                label: 'Strong Matches',
+                value: results.rankedCandidates.filter((r) => r.scores.finalScore >= 75).length,
+                color: '#10b981',
+              },
+              {
+                label: 'Top Score',
+                value: results.rankedCandidates[0]?.scores.finalScore ?? '—',
+                color: '#00487c',
+              },
             ].map(({ label, value, color }) => (
               <div key={label} className="text-center">
-                <div className="text-[1.5rem] font-extrabold font-heading" style={{ color: color || 'var(--color-text-primary)' }}>{value}</div>
+                <div
+                  className="text-[1.5rem] font-extrabold font-heading"
+                  style={{ color: color || 'var(--color-text-primary)' }}
+                >
+                  {value}
+                </div>
                 <div className="text-[11px] text-[var(--color-text-muted)]">{label}</div>
               </div>
             ))}
@@ -143,42 +307,181 @@ export default function ResumeRanker({ embedded = false }) {
       {!results && (
         <div className="card p-7 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-heading font-bold text-sm mb-3 text-[var(--color-text-primary)]">📋 Job Description</h3>
-              <UploadZone label="Upload JD File" accept=".pdf,.docx,.txt" file={jdFile} onChange={(e) => handleFileChange(e.target.files[0], setJdFile, 'Job description file')} hint="PDF, DOCX, or TXT · max 25 MB" />
-            </div>
+            {/* ─── JD Source ─── */}
             <div>
               <div className="flex justify-between items-center mb-3">
-                <h3 className="font-heading font-bold text-sm text-[var(--color-text-primary)]">👥 Candidates</h3>
+                <h3 className="font-heading font-bold text-sm text-[var(--color-text-primary)]">
+                  📋 Job Description
+                </h3>
+                {/* JD source toggle — only for logged-in recruiters with jobs */}
+                {isRecruiter && !embedded && recruiterJobs.length > 0 && (
+                  <div className="flex gap-1.5">
+                    {[
+                      { key: 'upload', label: '📁 Upload' },
+                      { key: 'existing', label: '📋 My Jobs' },
+                    ].map((m) => (
+                      <button
+                        key={m.key}
+                        onClick={() => {
+                          setJdSource(m.key);
+                          setError('');
+                        }}
+                        className={`text-[11px] py-1 px-3 rounded-full border cursor-pointer transition-colors font-medium ${
+                          jdSource === m.key
+                            ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)]'
+                            : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:border-[var(--color-accent)]'
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {jdSource === 'upload' ? (
+                <UploadZone
+                  label="Upload JD File"
+                  accept=".pdf,.docx,.txt"
+                  file={jdFile}
+                  onChange={(e) =>
+                    handleFileChange(e.target.files[0], setJdFile, 'Job description file')
+                  }
+                  hint="PDF, DOCX, or TXT · max 25 MB"
+                />
+              ) : (
+                <div>
+                  <select
+                    className="input-field mb-3"
+                    value={selectedJobId}
+                    onChange={(e) => setSelectedJobId(e.target.value)}
+                  >
+                    <option value="">Select one of your posted jobs…</option>
+                    {recruiterJobs.map((j) => (
+                      <option key={j._id} value={j._id}>
+                        {j.title} {j.company ? `— ${j.company}` : ''}{' '}
+                        ({j.status})
+                      </option>
+                    ))}
+                  </select>
+                  {selectedJob && (
+                    <div
+                      className="p-3 rounded-[var(--radius-md)] bg-[var(--color-surface-alt)] border border-[var(--color-border-light)] text-[13px]"
+                      style={{ animation: 'fade-in 0.3s ease' }}
+                    >
+                      <div className="font-semibold text-[var(--color-text-primary)] mb-1">
+                        📌 {selectedJob.title}
+                      </div>
+                      <div className="text-[var(--color-text-muted)] text-[12px] flex flex-wrap gap-2">
+                        {selectedJob.company && <span>🏢 {selectedJob.company}</span>}
+                        <span>📍 {selectedJob.location || 'Remote'}</span>
+                        <span>
+                          📅 {new Date(selectedJob.createdAt).toLocaleDateString()}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize ${
+                            selectedJob.status === 'active'
+                              ? 'bg-[var(--color-success-light)] text-[var(--color-success)]'
+                              : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]'
+                          }`}
+                        >
+                          {selectedJob.status}
+                        </span>
+                      </div>
+                      {selectedJob.requiredSkills?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {selectedJob.requiredSkills.slice(0, 8).map((s) => (
+                            <span
+                              key={s}
+                              className="tag text-[10px] px-2 py-0.5"
+                            >
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ─── Candidates ─── */}
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-heading font-bold text-sm text-[var(--color-text-primary)]">
+                  👥 Candidates
+                </h3>
                 <div className="flex gap-1.5">
                   {['file', 'text'].map((m) => (
-                    <button key={m} onClick={() => setCandidateInputMode(m)}
+                    <button
+                      key={m}
+                      onClick={() => setCandidateInputMode(m)}
                       className={`text-[11px] py-1 px-3 rounded-full border cursor-pointer transition-colors font-medium ${
-                        candidateInputMode === m ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)]' : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:border-[var(--color-accent)]'
-                      }`}>
+                        candidateInputMode === m
+                          ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)]'
+                          : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] border-[var(--color-border)] hover:border-[var(--color-accent)]'
+                      }`}
+                    >
                       {m === 'file' ? '📁 File' : '✏️ JSON'}
                     </button>
                   ))}
-                  <button onClick={loadSample} className="text-[11px] py-1 px-3 rounded-full bg-[var(--color-success-light)] text-[var(--color-success)] border border-[rgba(16,185,129,0.2)] cursor-pointer font-medium">
+                  <button
+                    onClick={loadSample}
+                    className="text-[11px] py-1 px-3 rounded-full bg-[var(--color-success-light)] text-[var(--color-success)] border border-[rgba(16,185,129,0.2)] cursor-pointer font-medium"
+                  >
                     Load Sample
                   </button>
                 </div>
               </div>
               {candidateInputMode === 'file' ? (
                 <>
-                  <UploadZone label="Upload Candidates File" accept=".json,.jsonl" file={candidatesFile} onChange={(e) => handleFileChange(e.target.files[0], setCandidatesFile, 'Candidates file')} hint=".json or .jsonl · max 500 MB" />
-                  <p className="text-[11px] text-[var(--color-text-muted)] mt-2">Supports .jsonl (JSON Lines) or .json array of candidate objects.</p>
+                  <UploadZone
+                    label="Upload Candidates File"
+                    accept=".json,.jsonl"
+                    file={candidatesFile}
+                    onChange={(e) =>
+                      handleFileChange(
+                        e.target.files[0],
+                        setCandidatesFile,
+                        'Candidates file'
+                      )
+                    }
+                    hint=".json or .jsonl · max 500 MB"
+                  />
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-2">
+                    Supports .jsonl (JSON Lines) or .json array of candidate objects.
+                  </p>
                 </>
               ) : (
                 <>
-                  <textarea className="input-field resize-y font-mono text-[12px] h-[200px]" placeholder={'[\n  {\n    "name": "Jane Doe",\n    "skills": ["React", "Node.js"],\n    "totalExperienceYears": 3\n  }\n]'} value={candidatesText} onChange={(e) => setCandidatesText(e.target.value)} spellCheck={false} />
-                  <p className="text-[11px] text-[var(--color-text-muted)] mt-1">Each: name, skills[], totalExperienceYears, experience[], education[], projects[], certifications[]</p>
+                  <textarea
+                    className="input-field resize-y font-mono text-[12px] h-[200px]"
+                    placeholder={
+                      '[\n  {\n    "name": "Jane Doe",\n    "skills": ["React", "Node.js"],\n    "totalExperienceYears": 3\n  }\n]'
+                    }
+                    value={candidatesText}
+                    onChange={(e) => setCandidatesText(e.target.value)}
+                    spellCheck={false}
+                  />
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
+                    Each: name, skills[], totalExperienceYears, experience[], education[], projects[],
+                    certifications[]
+                  </p>
                 </>
               )}
             </div>
           </div>
-          {error && <div className="mt-4 p-3 rounded-[var(--radius-md)] bg-[var(--color-danger-light)] border border-[rgba(239,68,68,0.25)] text-[var(--color-danger)] text-sm">⚠️ {error}</div>}
-          <button className="btn-primary w-full mt-5 py-3.5 text-[15px]" onClick={handleAnalyze} disabled={isAnalyzing}>
+          {error && (
+            <div className="mt-4 p-3 rounded-[var(--radius-md)] bg-[var(--color-danger-light)] border border-[rgba(239,68,68,0.25)] text-[var(--color-danger)] text-sm">
+              ⚠️ {error}
+            </div>
+          )}
+          <button
+            className="btn-primary w-full mt-5 py-3.5 text-[15px]"
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+          >
             {isAnalyzing ? '⏳ Analyzing…' : '🚀 Analyze & Rank Candidates'}
           </button>
         </div>
@@ -187,11 +490,18 @@ export default function ResumeRanker({ embedded = false }) {
       {/* Progress */}
       {isAnalyzing && (
         <div className="card p-7 text-center mb-6">
-          <div className="text-base font-semibold text-[var(--color-text-primary)] mb-3">{progress.stage}</div>
-          <div className="h-2 rounded-full bg-[var(--color-border-light)] overflow-hidden mb-2">
-            <div className="h-full rounded-full bg-[var(--color-accent)] transition-all duration-500" style={{ width: `${progress.pct}%` }} />
+          <div className="text-base font-semibold text-[var(--color-text-primary)] mb-3">
+            {progress.stage}
           </div>
-          <p className="text-[12px] text-[var(--color-text-muted)]">AI is semantically analyzing each candidate…</p>
+          <div className="h-2 rounded-full bg-[var(--color-border-light)] overflow-hidden mb-2">
+            <div
+              className="h-full rounded-full bg-[var(--color-accent)] transition-all duration-500"
+              style={{ width: `${progress.pct}%` }}
+            />
+          </div>
+          <p className="text-[12px] text-[var(--color-text-muted)]">
+            AI is semantically analyzing each candidate…
+          </p>
         </div>
       )}
 
@@ -201,31 +511,131 @@ export default function ResumeRanker({ embedded = false }) {
           {/* Toolbar */}
           <div className="flex flex-wrap gap-3 mb-4 items-center justify-between">
             <div className="flex flex-wrap gap-2.5 items-center">
-              <input className="input-field w-52" placeholder="🔍 Search by name or skill…" value={search} onChange={(e) => setSearch(e.target.value)} />
+              <input
+                className="input-field w-52"
+                placeholder="🔍 Search by name or skill…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
               <div className="flex items-center gap-1.5">
                 <label className="text-[11px] text-[var(--color-text-muted)]">Min</label>
-                <input type="number" min={0} max={100} className="input-field w-16 text-center" value={minScore} onChange={(e) => setMinScore(Number(e.target.value))} />
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  className="input-field w-16 text-center"
+                  value={minScore}
+                  onChange={(e) => setMinScore(Number(e.target.value))}
+                />
               </div>
-              <select className="input-field w-48" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+              <select
+                className="input-field w-48"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+              >
                 <option value="desc">↓ Highest First</option>
                 <option value="asc">↑ Lowest First</option>
               </select>
             </div>
-            <div className="flex gap-2">
-              <button className="btn-secondary py-2 px-3.5 text-[13px]" onClick={downloadJSON}>⬇️ JSON</button>
-              <button className="btn-secondary py-2 px-3.5 text-[13px]" onClick={downloadCSV}>📊 CSV</button>
-              <button className="btn-primary py-2 px-3.5 text-[13px]" onClick={() => { setResults(null); setJdFile(null); setCandidatesFile(null); setCandidatesText(''); setError(''); setSearch(''); setMinScore(0); }}>
+            <div className="flex gap-2 flex-wrap">
+              <button className="btn-secondary py-2 px-3.5 text-[13px]" onClick={downloadJSON}>
+                ⬇️ JSON
+              </button>
+              <button className="btn-secondary py-2 px-3.5 text-[13px]" onClick={downloadCSV}>
+                📊 CSV
+              </button>
+              {!isGuest && (
+                <button
+                  className="btn-secondary py-2 px-3.5 text-[13px]"
+                  onClick={() =>
+                    navigate('/recruiter/interview-questions', {
+                      state: {
+                        jobTitle: results.jobTitle,
+                        jobId: selectedJobId || '',
+                      },
+                    })
+                  }
+                >
+                  🎯 Interview Qs
+                </button>
+              )}
+              {!isGuest && selectedForCompare.length >= 2 && (
+                <button
+                  className="btn-primary py-2 px-3.5 text-[13px]"
+                  onClick={() =>
+                    navigate('/recruiter/compare', {
+                      state: {
+                        applications: selectedForCompare.map((item) => ({
+                          candidate: {
+                            name: item.candidate.name,
+                            email: item.candidate.email,
+                            headline: item.candidate.headline,
+                            skills: item.candidate.skills,
+                            totalExperienceYears: item.candidate.totalExperienceYears,
+                          },
+                          aiScores: item.scores,
+                          insights: item.insights,
+                        })),
+                        job: { title: results.jobTitle },
+                      },
+                    })
+                  }
+                >
+                  ⚖️ Compare ({selectedForCompare.length})
+                </button>
+              )}
+              <button
+                className="btn-primary py-2 px-3.5 text-[13px]"
+                onClick={() => {
+                  setResults(null);
+                  setJdFile(null);
+                  setCandidatesFile(null);
+                  setCandidatesText('');
+                  setError('');
+                  setSearch('');
+                  setMinScore(0);
+                  setSelectedForCompare([]);
+                }}
+              >
                 🔄 New Analysis
               </button>
             </div>
           </div>
 
+          {/* Compare info banner */}
+          {!isGuest && (
+            <div className="flex items-center gap-2 mb-4 p-2.5 rounded-[var(--radius-md)] bg-[var(--color-surface-alt)] border border-[var(--color-border-light)] text-[12px] text-[var(--color-text-muted)]">
+              <span>⚖️</span>
+              <span>
+                Click the checkbox on candidate cards to select 2–3 for side-by-side comparison.
+                {selectedForCompare.length > 0 && (
+                  <strong className="text-[var(--color-accent)] ml-1">
+                    {selectedForCompare.length} selected
+                  </strong>
+                )}
+              </span>
+            </div>
+          )}
+
           {/* JD Summary */}
           <div className="flex flex-wrap gap-2 items-center mb-5 p-3 rounded-[var(--radius-md)] bg-[var(--color-surface-alt)] border border-[var(--color-border-light)]">
-            <span className="font-semibold text-sm text-[var(--color-text-primary)]">📋 {results.jobTitle}</span>
-            {results.jdParsed?.seniorityLevel && <span className="tag">{results.jdParsed.seniorityLevel}</span>}
-            {results.jdParsed?.experienceRange?.label && <span className="tag">⏱ {results.jdParsed.experienceRange.label}</span>}
-            {(results.jdParsed?.requiredSkills || []).slice(0, 5).map((s) => <span key={s} className="tag bg-[var(--color-accent-light)] text-[var(--color-accent)] border-[rgba(0,72,124,0.22)]">{s}</span>)}
+            <span className="font-semibold text-sm text-[var(--color-text-primary)]">
+              📋 {results.jobTitle}
+            </span>
+            {results.jdParsed?.seniorityLevel && (
+              <span className="tag">{results.jdParsed.seniorityLevel}</span>
+            )}
+            {results.jdParsed?.experienceRange?.label && (
+              <span className="tag">⏱ {results.jdParsed.experienceRange.label}</span>
+            )}
+            {(results.jdParsed?.requiredSkills || []).slice(0, 5).map((s) => (
+              <span
+                key={s}
+                className="tag bg-[var(--color-accent-light)] text-[var(--color-accent)] border-[rgba(0,72,124,0.22)]"
+              >
+                {s}
+              </span>
+            ))}
           </div>
 
           {/* Candidate Cards */}
@@ -233,12 +643,42 @@ export default function ResumeRanker({ embedded = false }) {
             {displayed.length === 0 ? (
               <div className="card p-14 text-center">
                 <div className="text-5xl mb-3">🔍</div>
-                <h3 className="font-heading font-bold mb-1 text-[var(--color-text-primary)]">No candidates match</h3>
-                <p className="text-sm text-[var(--color-text-muted)]">Try lowering the minimum score or clearing the search.</p>
+                <h3 className="font-heading font-bold mb-1 text-[var(--color-text-primary)]">
+                  No candidates match
+                </h3>
+                <p className="text-sm text-[var(--color-text-muted)]">
+                  Try lowering the minimum score or clearing the search.
+                </p>
               </div>
             ) : (
               displayed.map((item) => (
-                <CandidateCard key={item.candidate.id || item.candidate.email || item.rank} item={item} rank={item.rank} onClick={() => setSelectedItem(item)} />
+                <div
+                  key={item.candidate.id || item.candidate.email || item.rank}
+                  className="relative"
+                >
+                  {/* Compare checkbox for logged-in recruiters */}
+                  {!isGuest && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCompare(item);
+                      }}
+                      className={`absolute top-3 right-3 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center text-xs cursor-pointer transition-all duration-200 ${
+                        isSelected(item)
+                          ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-white'
+                          : 'bg-white border-[var(--color-border)] text-transparent hover:border-[var(--color-accent)]'
+                      }`}
+                      title={isSelected(item) ? 'Remove from comparison' : 'Add to comparison'}
+                    >
+                      ✓
+                    </button>
+                  )}
+                  <CandidateCard
+                    item={item}
+                    rank={item.rank}
+                    onClick={() => setSelectedItem(item)}
+                  />
+                </div>
               ))
             )}
           </div>
